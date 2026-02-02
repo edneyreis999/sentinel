@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model RecentProject {
+  id             String   @id @default(cuid())
+  path           String   @unique
+  name           String
+  gameVersion    String?
+  screenshotPath String?
+  trechoCount    Int?
+  lastOpenedAt   DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([lastOpenedAt])
+  @@map("recent_projects")
+}
+
+model UserPreferences {
+  id                String    @id @default(cuid())
+  userId            String    @unique @default("default")
+  theme             String    @default("system")
+  language          String    @default("pt-BR")
+  windowWidth       Int       @default(1280)
+  windowHeight      Int       @default(720)
+  windowX           Int?
+  windowY           Int?
+  windowIsMaximized Boolean   @default(false)
+  autoSaveInterval  Int       @default(30000)
+  maxHistoryEntries Int       @default(100)
+  lastProjectPath   String?
+  lastOpenDate      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("user_preferences")
+}
+
+model SimulationHistoryEntry {
+  id             String   @id @default(cuid())
+  projectPath    String
+  projectName    String
+  timestamp      DateTime @default(now())
+  status         String   @default("PENDING")
+  ttkVersion     String
+  configJson     String
+  summaryJson    String
+  hasReport      Boolean  @default(false)
+  reportFilePath String?
+  durationMs     Int
+  battleCount    Int
+  trechoCount    Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([projectPath, timestamp])
+  @@index([timestamp])
+  @@map("simulation_history_v2")
+}
