@@ -1,0 +1,13 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Mutation {
+  """Echoes back the provided message"""
+  echo(message: String!): String!
+}
+
+type Query {
+  """Returns a greeting from the Sentinel API"""
+  hello: String!
+}
