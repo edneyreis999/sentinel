@@ -1,0 +1,12 @@
+# dependencies
+node_modules
+
+# production
+dist
+coverage
+
+# misc
+.DS_Store
+*.log
+*.lock
+pnpm-lock.yaml
