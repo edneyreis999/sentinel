@@ -30,9 +30,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     await this.prisma.$disconnect();
   }
 
-  get recentProject() { return this.prisma.recentProject; }
-  get userPreferences() { return this.prisma.userPreferences; }
-  get simulationHistoryEntry() { return this.prisma.simulationHistoryEntry; }
+  get recentProject() {
+    return this.prisma.recentProject;
+  }
+  get userPreferences() {
+    return this.prisma.userPreferences;
+  }
+  get simulationHistoryEntry() {
+    return this.prisma.simulationHistoryEntry;
+  }
 }
 ```
 
@@ -45,6 +51,7 @@ Should we invest time in fixing unit tests for the PrismaService, or is there a 
 ## Considerations
 
 ### Infrastructure Wrapper Characteristics
+
 - **Thin wrapper**: Minimal logic, mostly delegation
 - **External dependency**: PrismaClient is a well-tested library
 - **Framework integration**: Uses NestJS lifecycle hooks
@@ -52,12 +59,12 @@ Should we invest time in fixing unit tests for the PrismaService, or is there a 
 
 ### Testing Cost-Benefit Analysis
 
-| Test Type | Value | Cost | Recommendation |
-|-----------|-------|------|----------------|
-| Unit tests of PrismaService | Low | High (complex mocks) | Skip |
-| Integration tests of Repositories | High | Medium | Essential |
-| E2E tests of Resolvers | High | Medium | Essential |
-| Contract tests (interface validation) | Low | Low | Optional |
+| Test Type                             | Value | Cost                 | Recommendation |
+| ------------------------------------- | ----- | -------------------- | -------------- |
+| Unit tests of PrismaService           | Low   | High (complex mocks) | Skip           |
+| Integration tests of Repositories     | High  | Medium               | Essential      |
+| E2E tests of Resolvers                | High  | Medium               | Essential      |
+| Contract tests (interface validation) | Low   | Low                  | Optional       |
 
 ### Industry Best Practices
 
@@ -69,14 +76,17 @@ Should we invest time in fixing unit tests for the PrismaService, or is there a 
 ## Options
 
 ### Option 1: Fix Unit Tests (NOT RECOMMENDED)
+
 - Pros: All tests pass
 - Cons: High maintenance, tests framework not our code, complex mocks
 
 ### Option 2: Integration Tests Only (RECOMMENDED)
+
 - Pros: Tests real behavior, catches database issues, validates Prisma queries
 - Cons: Slower than unit tests, requires test database
 
 ### Option 3: Contract Tests + Integration Tests (RECOMMENDED)
+
 - Pros: Validates interface, catches integration issues, minimal overhead
 - Cons: Slightly more setup than Option 2
 
@@ -154,6 +164,7 @@ describe('PrismaProjectRepository - Integration', () => {
 ## Decision
 
 **Remove failing unit tests for PrismaService** and replace with:
+
 1. Simple contract test (interface validation)
 2. Integration tests for Repositories that use PrismaService
 

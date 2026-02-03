@@ -1,7 +1,7 @@
 # ADR Index - Sentinel (Daratrine)
 
-**Total ADRs:** 32
-**Last Updated:** 2026-02-01
+**Total ADRs:** 34
+**Last Updated:** 2026-02-03
 
 ## Overview
 
@@ -13,126 +13,128 @@ This index organizes all Architecture Decision Records (ADRs) for the Sentinel p
 
 ### API Module (2 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/API/ADR-001-rest-api-protocol.md) | REST API Protocol | Superseded by ADR-002 |
-| [ADR-002](API/ADR-002-graphql-api-with-apollo-server-5.md) | GraphQL API with Apollo Server 5 | Accepted |
+| ID                                                         | Title                            | Status                |
+| ---------------------------------------------------------- | -------------------------------- | --------------------- |
+| [ADR-001](generated/API/ADR-001-rest-api-protocol.md)      | REST API Protocol                | Superseded by ADR-002 |
+| [ADR-002](API/ADR-002-graphql-api-with-apollo-server-5.md) | GraphQL API with Apollo Server 5 | Accepted              |
 
 ### ARCH Module (1 ADR)
 
-| ID | Title | Status |
-|----|-------|--------|
+| ID                                                              | Title                                | Status   |
+| --------------------------------------------------------------- | ------------------------------------ | -------- |
 | [ADR-001](ARCH/ADR-001-clean-architecture-with-ddd-patterns.md) | Clean Architecture with DDD Patterns | Accepted |
 
 ### DB Module (6 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/DB/ADR-001-postgresql-unified-database-strategy.md) | PostgreSQL Unified Database Strategy | Accepted |
+| ID                                                                                   | Title                                             | Status   |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------- | -------- |
+| [ADR-001](generated/DB/ADR-001-postgresql-unified-database-strategy.md)              | PostgreSQL Unified Database Strategy              | Accepted |
 | [ADR-001](generated/DB/ADR-001-postgresql-unified-database-with-age-and-pgvector.md) | PostgreSQL Unified Database with AGE and pgvector | Accepted |
-| [ADR-002](generated/DB/ADR-002-apache-age-cypher-integration-strategy.md) | Apache AGE Cypher Integration Strategy | Accepted |
-| [ADR-003](generated/DB/ADR-003-postgresql-full-text-search-ts-rank-cd.md) | PostgreSQL Full-Text Search with ts_rank_cd | Accepted |
-| [ADR-XXX](generated/DB/ADR-XXX-pgvector-hnsw-vector-search.md) | pgvector HNSW Vector Search | Accepted |
+| [ADR-002](generated/DB/ADR-002-apache-age-cypher-integration-strategy.md)            | Apache AGE Cypher Integration Strategy            | Accepted |
+| [ADR-003](generated/DB/ADR-003-postgresql-full-text-search-ts-rank-cd.md)            | PostgreSQL Full-Text Search with ts_rank_cd       | Accepted |
+| [ADR-XXX](generated/DB/ADR-XXX-pgvector-hnsw-vector-search.md)                       | pgvector HNSW Vector Search                       | Accepted |
 
 ### DI Module (1 ADR)
 
-| ID | Title | Status |
-|----|-------|--------|
+| ID                                              | Title                             | Status   |
+| ----------------------------------------------- | --------------------------------- | -------- |
 | [ADR-001](DI/ADR-001-symbol-based-di-tokens.md) | Symbol-based DI Tokens for NestJS | Accepted |
 
 ### DOCS Module (3 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/DOCS/ADR-001-documentation-driven-development-approach.md) | Documentation-Driven Development Approach | Accepted |
+| ID                                                                                   | Title                                           | Status   |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------- | -------- |
+| [ADR-001](generated/DOCS/ADR-001-documentation-driven-development-approach.md)       | Documentation-Driven Development Approach       | Accepted |
 | [ADR-002](generated/DOCS/ADR-002-three-phase-incremental-implementation-strategy.md) | Three-Phase Incremental Implementation Strategy | Accepted |
-| [ADR-XXX](generated/DOCS/ADR-XXX-interview-based-decision-methodology.md) | Interview-Based Decision Methodology | Accepted |
+| [ADR-XXX](generated/DOCS/ADR-XXX-interview-based-decision-methodology.md)            | Interview-Based Decision Methodology            | Accepted |
 
 ### GRAPH Module (3 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/GRAPH/ADR-001-apache-age-graph-database-extension.md) | Apache AGE Graph Database Extension | Accepted |
-| [ADR-002](generated/GRAPH/ADR-002-template-based-cypher-generation.md) | Template-Based Cypher Generation | Accepted |
+| ID                                                                          | Title                                 | Status   |
+| --------------------------------------------------------------------------- | ------------------------------------- | -------- |
+| [ADR-001](generated/GRAPH/ADR-001-apache-age-graph-database-extension.md)   | Apache AGE Graph Database Extension   | Accepted |
+| [ADR-002](generated/GRAPH/ADR-002-template-based-cypher-generation.md)      | Template-Based Cypher Generation      | Accepted |
 | [ADR-002](generated/GRAPH/ADR-002-15-label-narrative-ontology-schema-v3.md) | 15-Label Narrative Ontology Schema v3 | Accepted |
 
 ### INFRA Module (3 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/INFRA/ADR-001-custom-postgresql-docker-image-compiled-extensions.md) | Custom PostgreSQL Docker Image with Compiled Extensions | Accepted |
-| [ADR-XXX](generated/INFRA/ADR-XXX-vps-deployment-traditional-server.md) | VPS Deployment - Traditional Server | Accepted |
+| ID                                                                                                | Title                                                       | Status   |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------- |
+| [ADR-001](generated/INFRA/ADR-001-custom-postgresql-docker-image-compiled-extensions.md)          | Custom PostgreSQL Docker Image with Compiled Extensions     | Accepted |
+| [ADR-XXX](generated/INFRA/ADR-XXX-vps-deployment-traditional-server.md)                           | VPS Deployment - Traditional Server                         | Accepted |
 | [ADR-XXX](generated/INFRA/ADR-XXX-docker-compose-orchestration-for-development-and-production.md) | Docker Compose Orchestration for Development and Production | Accepted |
 
 ### LLM Module (4 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/LLM/ADR-001-claude-3-5-sonnet-primary-llm.md) | Claude 3.5 Sonnet as Primary LLM | Accepted |
+| ID                                                                               | Title                                            | Status   |
+| -------------------------------------------------------------------------------- | ------------------------------------------------ | -------- |
+| [ADR-001](generated/LLM/ADR-001-claude-3-5-sonnet-primary-llm.md)                | Claude 3.5 Sonnet as Primary LLM                 | Accepted |
 | [ADR-001](generated/LLM/ADR-001-huggingface-sentence-transformers-embeddings.md) | HuggingFace Sentence Transformers for Embeddings | Accepted |
-| [ADR-002](generated/LLM/ADR-002-claude-pro-plan-cost-optimization.md) | Claude Pro Plan for Cost Optimization | Accepted |
-| [ADR-002](generated/LLM/ADR-002-hybrid-prompt-template-graph-metadata-chunks.md) | Hybrid Prompt Template: Graph Metadata + Chunks | Accepted |
+| [ADR-002](generated/LLM/ADR-002-claude-pro-plan-cost-optimization.md)            | Claude Pro Plan for Cost Optimization            | Accepted |
+| [ADR-002](generated/LLM/ADR-002-hybrid-prompt-template-graph-metadata-chunks.md) | Hybrid Prompt Template: Graph Metadata + Chunks  | Accepted |
 
 ### ORM Module (1 ADR)
 
-| ID | Title | Status |
-|----|-------|--------|
+| ID                                             | Title                                  | Status   |
+| ---------------------------------------------- | -------------------------------------- | -------- |
 | [ADR-001](ORM/ADR-001-prisma-7-with-sqlite.md) | Prisma 7 with SQLite for Local Storage | Accepted |
 
 ### RAG Module (1 ADR)
 
-| ID | Title | Status |
-|----|-------|--------|
+| ID                                                                 | Title                          | Status   |
+| ------------------------------------------------------------------ | ------------------------------ | -------- |
 | [ADR-001](generated/RAG/ADR-001-nestjs-monolithic-architecture.md) | NestJS Monolithic Architecture | Accepted |
 
 ### SEARCH Module (4 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](generated/SEARCH/ADR-001-hybrid-search-architecture-pgvector-fts-rrf.md) | Hybrid Search Architecture: pgvector + FTS + RRF | Accepted |
-| [ADR-001](generated/SEARCH/ADR-001-hnsw-index-configuration.md) | HNSW Index Configuration | Accepted |
-| [ADR-002](generated/SEARCH/ADR-002-reciprocal-rank-fusion-rrf-algorithm.md) | Reciprocal Rank Fusion (RRF) Algorithm | Accepted |
+| ID                                                                                        | Title                                                 | Status   |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------- | -------- |
+| [ADR-001](generated/SEARCH/ADR-001-hybrid-search-architecture-pgvector-fts-rrf.md)        | Hybrid Search Architecture: pgvector + FTS + RRF      | Accepted |
+| [ADR-001](generated/SEARCH/ADR-001-hnsw-index-configuration.md)                           | HNSW Index Configuration                              | Accepted |
+| [ADR-002](generated/SEARCH/ADR-002-reciprocal-rank-fusion-rrf-algorithm.md)               | Reciprocal Rank Fusion (RRF) Algorithm                | Accepted |
 | [ADR-002](generated/SEARCH/ADR-002-2-stage-subgraph-extraction-fts-embedding-fallback.md) | 2-Stage Subgraph Extraction: FTS + Embedding Fallback | Accepted |
 
 ### STATE Module (1 ADR)
 
-| ID | Title | Status |
-|----|-------|--------|
+| ID                                                                       | Title                                        | Status   |
+| ------------------------------------------------------------------------ | -------------------------------------------- | -------- |
 | [ADR-001](STATE/ADR-001-state-machine-pattern-for-status-transitions.md) | State Machine Pattern for Status Transitions | Accepted |
 
-### TEST Module (1 ADR)
+### TEST Module (3 ADRs)
 
-| ID | Title | Status |
-|----|-------|--------|
-| [ADR-001](TEST/ADR-001-fakebuilder-with-proporfactory-pattern.md) | FakeBuilder with PropOrFactory Pattern | Accepted |
+| ID                                                                            | Title                                              | Status   |
+| ----------------------------------------------------------------------------- | -------------------------------------------------- | -------- |
+| [ADR-001](TEST/ADR-001-fakebuilder-with-proporfactory-pattern.md)             | FakeBuilder with PropOrFactory Pattern             | Accepted |
+| [ADR-002](TEST/ADR-002-infrastructure-wrapper-testing-strategy.md)            | Infrastructure Wrapper Testing Strategy            | Accepted |
+| [ADR-003](TEST/ADR-003-in-memory-repositories-for-application-layer-tests.md) | In-Memory Repositories for Application Layer Tests | Accepted |
 
 ### VAL Module (1 ADR)
 
-| ID | Title | Status |
-|----|-------|--------|
+| ID                                                      | Title                                     | Status   |
+| ------------------------------------------------------- | ----------------------------------------- | -------- |
 | [ADR-001](VAL/ADR-001-zod-4-validation-with-openapi.md) | Zod 4 for Runtime Validation with OpenAPI | Accepted |
 
 ---
 
 ## Summary by Module
 
-| Module | Total ADRs | Key Focus Areas |
-|--------|-----------|-----------------|
-| API | 2 | GraphQL API with Apollo Server 5 |
-| ARCH | 1 | Clean Architecture with DDD patterns |
-| DB | 6 | PostgreSQL, Apache AGE, pgvector, FTS |
-| DI | 1 | Symbol-based DI tokens |
-| DOCS | 3 | Documentation process and methodology |
-| GRAPH | 3 | Graph database, Cypher, Ontology schema |
-| INFRA | 3 | Docker, VPS deployment |
-| LLM | 4 | Claude models, embeddings, prompts |
-| ORM | 1 | Prisma 7 with SQLite |
-| RAG | 1 | NestJS architecture |
-| SEARCH | 4 | Hybrid search, HNSW, RRF |
-| STATE | 1 | State Machine pattern |
-| TEST | 1 | FakeBuilder pattern |
-| VAL | 1 | Zod 4 validation |
-| **TOTAL** | **32** | **All architectural decisions** |
+| Module    | Total ADRs | Key Focus Areas                                             |
+| --------- | ---------- | ----------------------------------------------------------- |
+| API       | 2          | GraphQL API with Apollo Server 5                            |
+| ARCH      | 1          | Clean Architecture with DDD patterns                        |
+| DB        | 6          | PostgreSQL, Apache AGE, pgvector, FTS                       |
+| DI        | 1          | Symbol-based DI tokens                                      |
+| DOCS      | 3          | Documentation process and methodology                       |
+| GRAPH     | 3          | Graph database, Cypher, Ontology schema                     |
+| INFRA     | 3          | Docker, VPS deployment                                      |
+| LLM       | 4          | Claude models, embeddings, prompts                          |
+| ORM       | 1          | Prisma 7 with SQLite                                        |
+| RAG       | 1          | NestJS architecture                                         |
+| SEARCH    | 4          | Hybrid search, HNSW, RRF                                    |
+| STATE     | 1          | State Machine pattern                                       |
+| TEST      | 3          | FakeBuilder, In-Memory Repositories, Infrastructure testing |
+| VAL       | 1          | Zod 4 validation                                            |
+| **TOTAL** | **34**     | **All architectural decisions**                             |
 
 ---
 
@@ -178,10 +180,12 @@ This index organizes all Architecture Decision Records (ADRs) for the Sentinel p
    - Rationale: High-quality embeddings and primary LLM choice drive system quality
 
 8. **Testing & Quality**:
-   - TEST-001 (FakeBuilder with PropOrFactory) reduces test boilerplate
+   - TEST-001 (FakeBuilder with PropOrFactory) reduces test boilerplate by 60-80%
+   - TEST-002 (Infrastructure Wrapper Testing) focuses testing on business logic, not framework code
+   - TEST-003 (In-Memory Repositories) enables behavior validation without mocking fragility
    - VAL-001 (Zod 4) provides runtime type safety
    - STATE-001 (State Machine) enables isolated unit testing of domain logic
-   - Rationale: Testable domain logic through pure TypeScript without framework dependencies
+   - Rationale: Testable domain logic through pure TypeScript without framework dependencies, with practical testing strategies that eliminate over-mocking and focus on real behavior
 
 9. **Infrastructure**:
    - INFRA-001 (Custom PostgreSQL Docker Image) → INFRA-XXX (Docker Compose)
