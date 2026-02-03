@@ -22,7 +22,11 @@
  */
 
 import { CreateProjectUseCase } from '../use-cases/create-project.use-case';
-import { ProjectRepositoryFake, CreateProjectInputFakeBuilder, CreateProjectOutputFakeBuilder } from './_fakes';
+import {
+  ProjectRepositoryFake,
+  CreateProjectInputFakeBuilder,
+  CreateProjectOutputFakeBuilder,
+} from './_fakes';
 import { DomainError } from '@core/shared/domain/errors';
 
 describe('CreateProjectUseCase - Integration', () => {
@@ -164,9 +168,7 @@ describe('CreateProjectUseCase - Integration', () => {
     it('should set creation timestamp correctly', async () => {
       // Arrange
       const beforeCreate = new Date();
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/timestamp-test')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withPath('/timestamp-test').build();
 
       // Act
       const result = await useCase.execute(input);
@@ -179,9 +181,7 @@ describe('CreateProjectUseCase - Integration', () => {
 
     it('should set lastOpenedAt to creation time', async () => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/last-opened-test')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withPath('/last-opened-test').build();
 
       // Act
       const result = await useCase.execute(input);
@@ -218,17 +218,13 @@ describe('CreateProjectUseCase - Integration', () => {
 
     it('should maintain data integrity on failed creation', async () => {
       // Arrange - Create one project
-      await useCase.execute(
-        CreateProjectInputFakeBuilder.create().withPath('/valid').build(),
-      );
+      await useCase.execute(CreateProjectInputFakeBuilder.create().withPath('/valid').build());
 
       const projectCountBefore = repository.getAll().length;
 
       // Act - Try to create duplicate (will fail)
       try {
-        await useCase.execute(
-          CreateProjectInputFakeBuilder.create().withPath('/valid').build(),
-        );
+        await useCase.execute(CreateProjectInputFakeBuilder.create().withPath('/valid').build());
       } catch {
         // Expected to fail
       }
@@ -242,16 +238,12 @@ describe('CreateProjectUseCase - Integration', () => {
   describe('pre-seeded data scenarios', () => {
     it('should work with pre-seeded repository data', async () => {
       // Arrange - Seed existing data
-      const existingProject = CreateProjectOutputFakeBuilder.create()
-        .withPath('/existing')
-        .build();
+      const existingProject = CreateProjectOutputFakeBuilder.create().withPath('/existing').build();
       repository.seed([existingProject]);
 
       // Act - Create new project
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/new')
-        .build();
-      const result = await useCase.execute(input);
+      const input = CreateProjectInputFakeBuilder.create().withPath('/new').build();
+      await useCase.execute(input);
 
       // Assert
       const allProjects = repository.getAll();
@@ -268,9 +260,7 @@ describe('CreateProjectUseCase - Integration', () => {
       repository.seed([existingProject]);
 
       // Act & Assert
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/pre-seeded')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withPath('/pre-seeded').build();
 
       await expect(useCase.execute(input)).rejects.toThrow(DomainError);
     });
@@ -286,12 +276,8 @@ describe('CreateProjectUseCase - Integration', () => {
       const useCase2 = new CreateProjectUseCase(repo2);
 
       // Act
-      await useCase1.execute(
-        CreateProjectInputFakeBuilder.create().withPath('/repo1').build(),
-      );
-      await useCase2.execute(
-        CreateProjectInputFakeBuilder.create().withPath('/repo2').build(),
-      );
+      await useCase1.execute(CreateProjectInputFakeBuilder.create().withPath('/repo1').build());
+      await useCase2.execute(CreateProjectInputFakeBuilder.create().withPath('/repo2').build());
 
       // Assert - Repositories should be isolated
       expect(repo1.getAll()).toHaveLength(1);

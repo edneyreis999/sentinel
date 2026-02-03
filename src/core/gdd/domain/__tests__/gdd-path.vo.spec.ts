@@ -160,11 +160,7 @@ describe('GddPath', () => {
     });
 
     it('should handle paths with underscores and hyphens', () => {
-      const paths = [
-        '/gdds/my_project.md',
-        '/gdds/my-project.md',
-        '/gdds/my_project-v2.md',
-      ];
+      const paths = ['/gdds/my_project.md', '/gdds/my-project.md', '/gdds/my_project-v2.md'];
 
       paths.forEach((path) => {
         expect(() => new GddPath(path)).not.toThrow();

@@ -65,7 +65,9 @@ describe('BaseError', () => {
 
       expect(Object.getPrototypeOf(error)).toBe(TestError.prototype);
       expect(Object.getPrototypeOf(Object.getPrototypeOf(error))).toBe(BaseError.prototype);
-      expect(Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(error)))).toBe(Error.prototype);
+      expect(Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(error)))).toBe(
+        Error.prototype,
+      );
     });
   });
 

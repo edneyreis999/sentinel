@@ -36,7 +36,9 @@ export class ProjectService {
    * Example of coordinating multiple use cases
    * Get or create project (useful for "open recent" functionality)
    */
-  async getOrCreate(input: CreateProjectInput): Promise<{ project: CreateProjectOutput; created: boolean }> {
+  async getOrCreate(
+    input: CreateProjectInput,
+  ): Promise<{ project: CreateProjectOutput; created: boolean }> {
     try {
       const project = await this.getProjectUseCase.execute(input.path);
       return { project, created: false };

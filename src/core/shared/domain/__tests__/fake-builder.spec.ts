@@ -74,7 +74,7 @@ class ProjectFakeBuilder {
     return this;
   }
 
-  private withCount(count: number): this {
+  private withCount(_count: number): this {
     // This is a marker method for buildMany()
     return this;
   }
@@ -148,9 +148,7 @@ describe('FakeBuilder with PropOrFactory Pattern', () => {
     });
 
     it('should override single property with static value', () => {
-      const project = ProjectFakeBuilder.aProject()
-        .withName('Custom Name')
-        .build();
+      const project = ProjectFakeBuilder.aProject().withName('Custom Name').build();
 
       expect(project.name).toBe('Custom Name');
       expect(project.id).toBe('project-1'); // Other defaults preserved
@@ -171,10 +169,7 @@ describe('FakeBuilder with PropOrFactory Pattern', () => {
 
     it('should support method chaining', () => {
       const builder = ProjectFakeBuilder.aProject();
-      const chained = builder
-        .withName('Name')
-        .withDescription('Description')
-        .withStatus('active');
+      const chained = builder.withName('Name').withDescription('Description').withStatus('active');
 
       expect(chained).toBe(builder); // Returns this for chaining
     });
@@ -319,13 +314,9 @@ describe('FakeBuilder with PropOrFactory Pattern', () => {
 
     it('should focus test on relevant properties', () => {
       // Test focuses only on status validation, other fields use defaults
-      const activeProject = ProjectFakeBuilder.aProject()
-        .withStatus('active')
-        .build();
+      const activeProject = ProjectFakeBuilder.aProject().withStatus('active').build();
 
-      const draftProject = ProjectFakeBuilder.aProject()
-        .withStatus('draft')
-        .build();
+      const draftProject = ProjectFakeBuilder.aProject().withStatus('draft').build();
 
       expect(activeProject.status).toBe('active');
       expect(draftProject.status).toBe('draft');

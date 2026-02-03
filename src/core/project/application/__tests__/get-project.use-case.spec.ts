@@ -13,10 +13,7 @@
 import { GetProjectUseCase } from '../use-cases/get-project.use-case';
 import { IProjectRepository } from '../ports';
 import { DomainError } from '@core/shared/domain/errors';
-import {
-  CreateProjectOutputFakeBuilder,
-  ProjectRepositoryFake,
-} from './_fakes';
+import { CreateProjectOutputFakeBuilder, ProjectRepositoryFake } from './_fakes';
 
 describe('GetProjectUseCase', () => {
   let useCase: GetProjectUseCase;
@@ -99,9 +96,7 @@ describe('GetProjectUseCase', () => {
   describe('edge cases', () => {
     it('should handle finding project with numeric-like ID', async () => {
       // Arrange - Some systems use numeric IDs as strings
-      const numericIdProject = CreateProjectOutputFakeBuilder.create()
-        .withId('12345')
-        .build();
+      const numericIdProject = CreateProjectOutputFakeBuilder.create().withId('12345').build();
 
       (repository as ProjectRepositoryFake).seed([numericIdProject]);
 
@@ -131,9 +126,9 @@ describe('GetProjectUseCase', () => {
   describe('integration with repository', () => {
     it('should call repository.findById with correct ID', async () => {
       // Arrange
-      const findByIdSpy = jest.spyOn(repository, 'findById').mockResolvedValue(
-        CreateProjectOutputFakeBuilder.create().build(),
-      );
+      const findByIdSpy = jest
+        .spyOn(repository, 'findById')
+        .mockResolvedValue(CreateProjectOutputFakeBuilder.create().build());
 
       // Act
       await useCase.execute('test-id');

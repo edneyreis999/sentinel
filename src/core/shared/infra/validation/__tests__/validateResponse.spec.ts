@@ -62,7 +62,10 @@ describe('validateResponse', () => {
         // Expected to throw
       }
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Response validation failed:', expect.any(Object));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Response validation failed:',
+        expect.any(Object),
+      );
     });
   });
 

@@ -195,7 +195,10 @@ describe('CreateProjectUseCase', () => {
 
     it('should handle project names at minimum length (3 chars)', async () => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create().withName('ABC').withPath('/abc/path').build();
+      const input = CreateProjectInputFakeBuilder.create()
+        .withName('ABC')
+        .withPath('/abc/path')
+        .build();
 
       // Act
       const result = await useCase.execute(input);
@@ -209,9 +212,9 @@ describe('CreateProjectUseCase', () => {
     it('should call repository.existsByPath before creating', async () => {
       // Arrange
       const existsByPathSpy = jest.spyOn(repository, 'existsByPath').mockResolvedValue(false);
-      const createSpy = jest.spyOn(repository, 'create').mockResolvedValue(
-        CreateProjectOutputFakeBuilder.create().build(),
-      );
+      const createSpy = jest
+        .spyOn(repository, 'create')
+        .mockResolvedValue(CreateProjectOutputFakeBuilder.create().build());
 
       const input = CreateProjectInputFakeBuilder.create().build();
 

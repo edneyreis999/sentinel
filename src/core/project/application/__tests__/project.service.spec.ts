@@ -92,9 +92,7 @@ describe('ProjectService', () => {
   describe('getOrCreate', () => {
     it('should return existing project when found', async () => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/existing/path')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withPath('/existing/path').build();
       const existingProject = CreateProjectOutputFakeBuilder.create()
         .withPath('/existing/path')
         .build();
@@ -113,12 +111,8 @@ describe('ProjectService', () => {
 
     it('should create new project when not found', async () => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/new/path')
-        .build();
-      const newProject = CreateProjectOutputFakeBuilder.create()
-        .withPath('/new/path')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withPath('/new/path').build();
+      const newProject = CreateProjectOutputFakeBuilder.create().withPath('/new/path').build();
 
       getProjectUseCase.execute.mockRejectedValue(new Error('Not found'));
       createProjectUseCase.execute.mockResolvedValue(newProject);
@@ -135,9 +129,7 @@ describe('ProjectService', () => {
 
     it('should use path as ID for getProject lookup', async () => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create()
-        .withPath('/specific/path')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withPath('/specific/path').build();
       const existingProject = CreateProjectOutputFakeBuilder.create().build();
 
       getProjectUseCase.execute.mockResolvedValue(existingProject);
@@ -190,9 +182,7 @@ describe('ProjectService', () => {
       const project1 = CreateProjectOutputFakeBuilder.create().withPath('/path1').build();
       const project2 = CreateProjectOutputFakeBuilder.create().withPath('/path2').build();
 
-      createProjectUseCase.execute
-        .mockResolvedValueOnce(project1)
-        .mockResolvedValueOnce(project2);
+      createProjectUseCase.execute.mockResolvedValueOnce(project1).mockResolvedValueOnce(project2);
 
       // Act
       const result1 = await service.createProject(input1);

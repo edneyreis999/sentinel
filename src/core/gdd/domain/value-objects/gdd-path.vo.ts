@@ -21,7 +21,12 @@ export class GddPath {
     }
 
     // Must end with a valid file extension or directory
-    if (trimmed.length > 1 && !trimmed.endsWith('.md') && !trimmed.endsWith('.json') && !trimmed.endsWith('/')) {
+    if (
+      trimmed.length > 1 &&
+      !trimmed.endsWith('.md') &&
+      !trimmed.endsWith('.json') &&
+      !trimmed.endsWith('/')
+    ) {
       throw new DomainError('GDD path must end with .md, .json, or /');
     }
 
@@ -69,9 +74,8 @@ export class GddPath {
 
   getParentPath(): GddPath {
     // Remove trailing slash if present for consistent splitting
-    const normalizedPath = this.value.endsWith('/') && this.value.length > 1
-      ? this.value.slice(0, -1)
-      : this.value;
+    const normalizedPath =
+      this.value.endsWith('/') && this.value.length > 1 ? this.value.slice(0, -1) : this.value;
 
     const parts = normalizedPath.split('/');
     parts.pop(); // Remove last element (filename or last directory)

@@ -89,23 +89,44 @@ describe('validateInput', () => {
 
     it.each([
       { field: 'name', value: '', description: 'empty string', schemaOverride: undefined },
-      { field: 'email', value: '', description: 'empty string for email', schemaOverride: undefined },
-      { field: 'name', value: 'ab', description: 'too short (under min 3)', schemaOverride: undefined },
-      { field: 'email', value: 'not-email', description: 'invalid email format', schemaOverride: undefined },
-    ])('should throw BadRequestException when $field is $description', ({ field, value, schemaOverride }) => {
-      const input = {
-        name: field === 'name' ? value : 'John Doe',
-        email: field === 'email' ? value : 'john@example.com',
-      };
+      {
+        field: 'email',
+        value: '',
+        description: 'empty string for email',
+        schemaOverride: undefined,
+      },
+      {
+        field: 'name',
+        value: 'ab',
+        description: 'too short (under min 3)',
+        schemaOverride: undefined,
+      },
+      {
+        field: 'email',
+        value: 'not-email',
+        description: 'invalid email format',
+        schemaOverride: undefined,
+      },
+    ])(
+      'should throw BadRequestException when $field is $description',
+      ({ field, value, schemaOverride: _schemaOverride }) => {
+        const input = {
+          name: field === 'name' ? value : 'John Doe',
+          email: field === 'email' ? value : 'john@example.com',
+        };
 
-      expect(() => validateInput(VALIDATION_SCHEMA, input, 'body')).toThrow(BadRequestException);
-    });
+        expect(() => validateInput(VALIDATION_SCHEMA, input, 'body')).toThrow(BadRequestException);
+      },
+    );
 
     it('should throw BadRequestException when name is whitespace only (with custom schema)', () => {
       const trimmedSchema = z.object({
-        name: z.string().min(1).refine((val) => val.trim().length >= 3, {
-          message: 'Name must be at least 3 non-whitespace characters',
-        }),
+        name: z
+          .string()
+          .min(1)
+          .refine((val) => val.trim().length >= 3, {
+            message: 'Name must be at least 3 non-whitespace characters',
+          }),
         email: z.string().email(),
         age: z.number().min(18).optional(),
       });
@@ -321,7 +342,9 @@ describe('validateInput', () => {
         ],
       };
 
-      expect(() => validateInput(arrayWithRequiredSchema, input, 'body')).toThrow(BadRequestException);
+      expect(() => validateInput(arrayWithRequiredSchema, input, 'body')).toThrow(
+        BadRequestException,
+      );
 
       try {
         validateInput(arrayWithRequiredSchema, input, 'body');

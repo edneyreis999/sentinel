@@ -98,9 +98,9 @@ describe('ProjectId', () => {
       expect(projectId.equals(null as any)).toBe(false);
       expect(projectId.equals(undefined as any)).toBe(false);
       expect(projectId.equals('550e8400-e29b-41d4-a716-446655440000' as any)).toBe(false);
-      expect(projectId.equals({ getValue: () => '550e8400-e29b-41d4-a716-446655440000' } as any)).toBe(
-        false,
-      );
+      expect(
+        projectId.equals({ getValue: () => '550e8400-e29b-41d4-a716-446655440000' } as any),
+      ).toBe(false);
     });
   });
 
@@ -109,8 +109,8 @@ describe('ProjectId', () => {
       const uuid = '550e8400-e29b-41d4-a716-446655440000';
       const projectId = new ProjectId(uuid);
 
-      const value = projectId.getValue();
       // Attempt to modify (if value were mutable)
+      // getValue() should always return the same value
       expect(projectId.getValue()).toBe(uuid);
     });
   });
