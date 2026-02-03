@@ -1,6 +1,6 @@
 import { GetUserPreferencesUseCase } from '../use-cases/get-user-preferences.use-case';
 import { UserPreferencesInMemoryRepository } from '@core/user-preferences/infra';
-import { UserPreferences } from '@core/user-preferences/domain';
+import { UserPreferencesFakeBuilder } from '@core/user-preferences/domain/__tests__/user-preferences.fake-builder';
 
 describe('GetUserPreferencesUseCase', () => {
   let useCase: GetUserPreferencesUseCase;
@@ -12,7 +12,7 @@ describe('GetUserPreferencesUseCase', () => {
   });
 
   it('should return existing preferences', async () => {
-    const prefs = UserPreferences.createDefaults('user-1');
+    const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
     await repository.save(prefs);
 
     const output = await useCase.execute({ userId: 'user-1' });
@@ -36,5 +36,31 @@ describe('GetUserPreferencesUseCase', () => {
     const output = await useCase.execute({ userId: 'default' });
 
     expect(output.userId).toBe('default');
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty string userId with lazy initialization', async () => {
+      const output = await useCase.execute({ userId: '' });
+
+      expect(output.userId).toBe('');
+      expect(output.theme).toBe('SYSTEM');
+      expect(output.language).toBe('pt-BR');
+    });
+
+    it('should handle special characters in userId', async () => {
+      const specialUserId = 'user@email.com';
+      const output = await useCase.execute({ userId: specialUserId });
+
+      expect(output.userId).toBe(specialUserId);
+      expect(output.theme).toBe('SYSTEM');
+    });
+
+    it('should handle very long userId', async () => {
+      const longUserId = 'a'.repeat(255);
+      const output = await useCase.execute({ userId: longUserId });
+
+      expect(output.userId).toBe(longUserId);
+      expect(output.theme).toBe('SYSTEM');
+    });
   });
 });

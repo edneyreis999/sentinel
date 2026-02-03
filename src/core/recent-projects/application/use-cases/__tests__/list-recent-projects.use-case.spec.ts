@@ -77,29 +77,13 @@ describe('ListRecentProjectsUseCase', () => {
   });
 
   it('should filter by name', async () => {
-    // Arrange: Create projects with different names and unique paths
-    const sentinelProjects = [
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/sentinel1.sentinel')
-        .withName('Sentinel Project 1')
-        .build(),
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/sentinel2.sentinel')
-        .withName('Sentinel Project 2')
-        .build(),
-    ];
-    const otherProjects = [
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/other.sentinel')
-        .withName('Other Project')
-        .build(),
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/different.sentinel')
-        .withName('Different Name')
-        .build(),
-    ];
+    // Arrange: Create 4 projects - 2 matching filter, 2 not matching
+    const projects = RecentProjectFakeBuilder.aRecentProject()
+      .withPath((index) => `/projects/project-${index}.sentinel`)
+      .withName((index) => (index < 2 ? `Sentinel Project ${index + 1}` : `Other ${index + 1}`))
+      .buildMany(4);
 
-    for (const project of [...sentinelProjects, ...otherProjects]) {
+    for (const project of projects) {
       await repository.upsert(project);
     }
 
@@ -115,25 +99,13 @@ describe('ListRecentProjectsUseCase', () => {
   });
 
   it('should filter by game version', async () => {
-    // Arrange: Create projects with different versions and unique paths
-    const v1Projects = [
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/v1-proj1.sentinel')
-        .withGameVersion(TEST_GAME_VERSION)
-        .build(),
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/v1-proj2.sentinel')
-        .withGameVersion(TEST_GAME_VERSION)
-        .build(),
-    ];
-    const v2Projects = [
-      RecentProjectFakeBuilder.aRecentProject()
-        .withPath('/projects/v2-proj.sentinel')
-        .withGameVersion('2.0.0')
-        .build(),
-    ];
+    // Arrange: Create 3 projects - 2 with v1.0.0, 1 with v2.0.0
+    const projects = RecentProjectFakeBuilder.aRecentProject()
+      .withPath((index) => `/projects/v${index}-proj.sentinel`)
+      .withGameVersion((index) => (index < 2 ? TEST_GAME_VERSION : '2.0.0'))
+      .buildMany(3);
 
-    for (const project of [...v1Projects, ...v2Projects]) {
+    for (const project of projects) {
       await repository.upsert(project);
     }
 

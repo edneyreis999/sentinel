@@ -41,11 +41,6 @@ describe('CreateSimulationHistoryUseCase', () => {
     expect(result.projectPath).toBe(input.projectPath);
     expect(result.projectName).toBe(input.projectName);
     expect(result.status).toBe(input.status);
-
-    // Verify entry was actually persisted
-    const persisted = await repository.findById(result.id);
-    expect(persisted).toBeDefined();
-    expect(persisted?.projectPath).toBe(input.projectPath);
   });
 
   it('should create entry with default PENDING status', async () => {

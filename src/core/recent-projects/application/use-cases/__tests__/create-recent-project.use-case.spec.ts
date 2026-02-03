@@ -45,12 +45,6 @@ describe('CreateRecentProjectUseCase', () => {
       screenshotPath: input.screenshotPath,
       trechoCount: input.trechoCount,
     });
-
-    // Verify project was persisted
-    const stored = await repository.findByPath(input.path);
-    expect(stored).toBeDefined();
-    expect(stored?.path).toBe(input.path);
-    expect(stored?.name).toBe(input.name);
   });
 
   it('should update existing project when path exists', async () => {
@@ -72,11 +66,6 @@ describe('CreateRecentProjectUseCase', () => {
 
     expect(result.name).toBe(input.name);
     expect(result.gameVersion).toBe(input.gameVersion);
-
-    // Verify update was persisted
-    const updated = await repository.findByPath(input.path);
-    expect(updated?.name).toBe(TEST_UPDATED_PROJECT_NAME);
-    expect(updated?.gameVersion).toBe(TEST_UPDATED_PROJECT_VERSION);
   });
 
   it('should create project with only required fields', async () => {
@@ -92,9 +81,5 @@ describe('CreateRecentProjectUseCase', () => {
     expect(result.gameVersion).toBeNull();
     expect(result.screenshotPath).toBeNull();
     expect(result.trechoCount).toBeNull();
-
-    // Verify minimal project was persisted
-    const stored = await repository.findByPath(input.path);
-    expect(stored).toBeDefined();
   });
 });

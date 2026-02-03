@@ -1,6 +1,6 @@
 import { UpdateUserPreferencesUseCase } from '../use-cases/update-user-preferences.use-case';
 import { UserPreferencesInMemoryRepository } from '@core/user-preferences/infra';
-import { UserPreferences } from '@core/user-preferences/domain';
+import { UserPreferencesFakeBuilder } from '@core/user-preferences/domain/__tests__/user-preferences.fake-builder';
 
 /**
  * Fake implementation of PubSub for testing
@@ -47,7 +47,7 @@ describe('UpdateUserPreferencesUseCase', () => {
   });
 
   it('should update existing preferences', async () => {
-    const prefs = UserPreferences.createDefaults('user-1');
+    const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
     await repository.save(prefs);
 
     const output = await useCase.execute({
@@ -71,7 +71,7 @@ describe('UpdateUserPreferencesUseCase', () => {
   });
 
   it('should update window dimensions', async () => {
-    const prefs = UserPreferences.createDefaults('user-1');
+    const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
     await repository.save(prefs);
 
     const output = await useCase.execute({
@@ -85,7 +85,7 @@ describe('UpdateUserPreferencesUseCase', () => {
   });
 
   it('should update auto save interval', async () => {
-    const prefs = UserPreferences.createDefaults('user-1');
+    const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
     await repository.save(prefs);
 
     const output = await useCase.execute({
@@ -97,7 +97,7 @@ describe('UpdateUserPreferencesUseCase', () => {
   });
 
   it('should publish PubSub event', async () => {
-    const prefs = UserPreferences.createDefaults('user-1');
+    const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
     await repository.save(prefs);
 
     await useCase.execute({
@@ -115,7 +115,7 @@ describe('UpdateUserPreferencesUseCase', () => {
   });
 
   it('should update last project path and set lastOpenDate', async () => {
-    const prefs = UserPreferences.createDefaults('user-1');
+    const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
     await repository.save(prefs);
 
     const output = await useCase.execute({
@@ -125,5 +125,56 @@ describe('UpdateUserPreferencesUseCase', () => {
 
     expect(output.lastProjectPath).toBe('/new/path');
     expect(output.lastOpenDate).toBeInstanceOf(Date);
+  });
+
+  describe('domain validation propagation', () => {
+    it('should propagate DomainError for invalid window dimensions', async () => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
+      await repository.save(prefs);
+
+      await expect(
+        useCase.execute({
+          userId: 'user-1',
+          windowWidth: 0,
+          windowHeight: 720,
+        }),
+      ).rejects.toThrow('Window dimensions must be positive');
+    });
+
+    it('should propagate DomainError for invalid autoSaveInterval', async () => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
+      await repository.save(prefs);
+
+      await expect(
+        useCase.execute({
+          userId: 'user-1',
+          autoSaveInterval: 1000,
+        }),
+      ).rejects.toThrow('Auto-save interval must be at least 5000ms');
+    });
+
+    it('should propagate DomainError for invalid maxHistoryEntries', async () => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
+      await repository.save(prefs);
+
+      await expect(
+        useCase.execute({
+          userId: 'user-1',
+          maxHistoryEntries: 0,
+        }),
+      ).rejects.toThrow('Max history entries must be between 1 and 1000');
+    });
+
+    it('should propagate DomainError for maxHistoryEntries exceeding limit', async () => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('user-1').build();
+      await repository.save(prefs);
+
+      await expect(
+        useCase.execute({
+          userId: 'user-1',
+          maxHistoryEntries: 1001,
+        }),
+      ).rejects.toThrow('Max history entries must be between 1 and 1000');
+    });
   });
 });
