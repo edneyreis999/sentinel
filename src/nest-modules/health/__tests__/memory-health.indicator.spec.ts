@@ -11,6 +11,11 @@ const MEMORY_USAGE_SCENARIOS = {
   THRESHOLD_95: { percent: 0.95, expectedStatus: HealthStatusEnum.UNHEALTHY },
 } as const;
 
+// System constants for testing
+const SYSTEM_CONSTANTS = {
+  MOCK_TOTAL_MEMORY_16GB: 16_000_000_000, // 16GB in bytes for consistent calculation
+} as const;
+
 describe('MemoryHealthIndicator', () => {
   let indicator: MemoryHealthIndicator;
 
@@ -88,7 +93,7 @@ describe('MemoryHealthIndicator', () => {
     });
 
     it('should return UNHEALTHY exactly at 95% threshold', () => {
-      const totalMem = 16_000_000_000; // 16GB fixed value for consistent calculation
+      const totalMem = SYSTEM_CONSTANTS.MOCK_TOTAL_MEMORY_16GB;
       jest.spyOn(os, 'totalmem').mockReturnValue(totalMem);
 
       const usage = totalMem * MEMORY_USAGE_SCENARIOS.THRESHOLD_95.percent;

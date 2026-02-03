@@ -134,32 +134,34 @@ describe('Validation Integration (e2e)', () => {
       ]);
     });
 
-    it('should validate number types correctly', () => {
-      const validData = { count: 10, price: 99.99 };
-      const result = validateInput(TEST_SCHEMAS.numberData, validData, 'body');
+    it.each([
+      {
+        type: 'number',
+        schema: TEST_SCHEMAS.numberData,
+        validData: { count: 10, price: 99.99 },
+        invalidData: { count: 'not a number' },
+        expectedValid: { count: 10, price: 99.99 },
+      },
+      {
+        type: 'array',
+        schema: TEST_SCHEMAS.arrayData,
+        validData: { tags: ['typescript', 'testing'] },
+        invalidData: { tags: [] },
+        expectedValid: { tags: ['typescript', 'testing'] },
+      },
+    ])(
+      'should validate and reject $type types correctly',
+      ({ schema, validData, invalidData, expectedValid }) => {
+        // Valid case
+        const result = validateInput(schema, validData, 'body');
+        expect(result).toEqual(expectedValid);
 
-      expect(result.count).toBe(10);
-      expect(result.price).toBe(99.99);
-    });
-
-    it('should reject invalid number types', () => {
-      expect(() => {
-        validateInput(TEST_SCHEMAS.numberData, { count: 'not a number' }, 'body');
-      }).toThrow(BadRequestException);
-    });
-
-    it('should validate array types', () => {
-      const validData = { tags: ['typescript', 'testing'] };
-      const result = validateInput(TEST_SCHEMAS.arrayData, validData, 'body');
-
-      expect(result.tags).toEqual(['typescript', 'testing']);
-    });
-
-    it('should reject empty arrays when min(1) is specified', () => {
-      expect(() => {
-        validateInput(TEST_SCHEMAS.arrayData, { tags: [] }, 'body');
-      }).toThrow(BadRequestException);
-    });
+        // Invalid case
+        expect(() => {
+          validateInput(schema, invalidData, 'body');
+        }).toThrow(BadRequestException);
+      },
+    );
   });
 
   describe('validateResponse function', () => {
