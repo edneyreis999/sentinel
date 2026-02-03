@@ -15,10 +15,12 @@ describe('PrismaService (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+      }),
+    );
     await app.init();
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
@@ -32,9 +34,7 @@ describe('PrismaService (e2e)', () => {
   describe('Database Connection', () => {
     it('should connect to database successfully', async () => {
       // Verify connection through health endpoint
-      const response = await request(app.getHttpServer())
-        .get('/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/health').expect(200);
 
       expect(response.body.services.database.status).toBeDefined();
       expect(['up', 'down']).toContain(response.body.services.database.status);
@@ -99,10 +99,7 @@ describe('PrismaService (e2e)', () => {
     it('should handle batch operations', async () => {
       // Test batch queries - wrapped in try/catch for no DB scenario
       try {
-        const queries = [
-          prismaService.$queryRaw`SELECT 1`,
-          prismaService.$queryRaw`SELECT 2`,
-        ];
+        const queries = [prismaService.$queryRaw`SELECT 1`, prismaService.$queryRaw`SELECT 2`];
 
         const results = await Promise.all(queries);
         expect(results).toHaveLength(2);
@@ -260,9 +257,7 @@ describe('PrismaService (e2e)', () => {
   describe('Error Handling', () => {
     it('should handle invalid query gracefully', async () => {
       try {
-        await expect(
-          prismaService.$queryRaw`SELECT * FROM nonexistent_table`
-        ).rejects.toThrow();
+        await expect(prismaService.$queryRaw`SELECT * FROM nonexistent_table`).rejects.toThrow();
       } catch (error) {
         // If database is not configured, we still pass the test
         expect(error).toBeDefined();
@@ -275,7 +270,7 @@ describe('PrismaService (e2e)', () => {
           prismaService.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT 1`;
             throw new Error('Test error');
-          })
+          }),
         ).rejects.toThrow('Test error');
       } catch (error) {
         // If database is not configured, we still pass the test
@@ -351,13 +346,11 @@ describe('PrismaService (e2e)', () => {
   describe('Performance', () => {
     it('should handle concurrent queries', async () => {
       try {
-        const promises = Array.from({ length: 10 }, () =>
-          prismaService.$queryRaw`SELECT 1 as id`
-        );
+        const promises = Array.from({ length: 10 }, () => prismaService.$queryRaw`SELECT 1 as id`);
 
         const results = await Promise.all(promises);
         expect(results).toHaveLength(10);
-        results.forEach(result => {
+        results.forEach((result) => {
           expect(result).toBeDefined();
         });
       } catch (error) {
@@ -370,8 +363,9 @@ describe('PrismaService (e2e)', () => {
       // Connection pooling is handled by Prisma
       // This test verifies multiple queries complete successfully
       try {
-        const queries = Array.from({ length: 5 }, (_, i) =>
-          prismaService.$queryRaw`SELECT ${i + 1} as id`
+        const queries = Array.from(
+          { length: 5 },
+          (_, i) => prismaService.$queryRaw`SELECT ${i + 1} as id`,
         );
 
         const results = await Promise.all(queries);

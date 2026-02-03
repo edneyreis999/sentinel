@@ -8,6 +8,8 @@
   },
   "moduleNameMapper": {
     "^@core/(.*)$": "<rootDir>/../src/core/$1",
-    "^@nest-modules/(.*)$": "<rootDir>/../src/nest-modules/$1"
+    "^@nest-modules/(.*)$": "<rootDir>/../src/nest-modules/$1",
+    "^@database$": "<rootDir>/../src/database",
+    "^@database/(.*)$": "<rootDir>/../src/database/$1"
   }
 }

@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { z } from 'zod';
-import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { validateInput, validateResponse } from '../../src/core/shared/infra/validation';
 
@@ -15,10 +19,12 @@ describe('Validation Integration (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+      }),
+    );
     await app.init();
   });
 
@@ -88,9 +94,10 @@ describe('Validation Integration (e2e)', () => {
         expect(error).toBeInstanceOf(BadRequestException);
         const response = (error as BadRequestException).getResponse();
         // The response might be wrapped in an object with statusCode, message, etc.
-        const errors = typeof response === 'object' && response !== null && 'message' in response
-          ? (response as { message: unknown }).message
-          : response;
+        const errors =
+          typeof response === 'object' && response !== null && 'message' in response
+            ? (response as { message: unknown }).message
+            : response;
 
         expect(Array.isArray(errors)).toBe(true);
         if (Array.isArray(errors)) {
@@ -118,9 +125,10 @@ describe('Validation Integration (e2e)', () => {
         expect(error).toBeInstanceOf(BadRequestException);
         const response = (error as BadRequestException).getResponse();
         // The response might be wrapped in an object with statusCode, message, etc.
-        const errors = typeof response === 'object' && response !== null && 'message' in response
-          ? (response as { message: unknown }).message
-          : response;
+        const errors =
+          typeof response === 'object' && response !== null && 'message' in response
+            ? (response as { message: unknown }).message
+            : response;
 
         expect(Array.isArray(errors)).toBe(true);
         if (Array.isArray(errors)) {
@@ -154,9 +162,10 @@ describe('Validation Integration (e2e)', () => {
         expect(error).toBeInstanceOf(BadRequestException);
         const response = (error as BadRequestException).getResponse();
         // The response might be wrapped in an object with statusCode, message, etc.
-        const errors = typeof response === 'object' && response !== null && 'message' in response
-          ? (response as { message: unknown }).message
-          : response;
+        const errors =
+          typeof response === 'object' && response !== null && 'message' in response
+            ? (response as { message: unknown }).message
+            : response;
 
         expect(Array.isArray(errors)).toBe(true);
         if (Array.isArray(errors)) {
@@ -290,10 +299,12 @@ describe('Validation Integration (e2e)', () => {
 
     it('should validate array responses', () => {
       const arraySchema = z.object({
-        items: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-        })),
+        items: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+          }),
+        ),
       });
 
       const validData = {
@@ -343,7 +354,10 @@ describe('Validation Integration (e2e)', () => {
       const registrationSchema = z.object({
         username: z.string().min(3).max(30),
         email: z.string().email(),
-        password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
+        password: z
+          .string()
+          .min(8)
+          .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
         age: z.number().min(13).max(120),
       });
 
@@ -362,7 +376,10 @@ describe('Validation Integration (e2e)', () => {
       const registrationSchema = z.object({
         username: z.string().min(3),
         email: z.string().email(),
-        password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
+        password: z
+          .string()
+          .min(8)
+          .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
       });
 
       const weakPasswordData = {
@@ -412,10 +429,12 @@ describe('Validation Integration (e2e)', () => {
 
     it('should validate API response with pagination', () => {
       const paginatedResponseSchema = z.object({
-        data: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-        })),
+        data: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+          }),
+        ),
         meta: z.object({
           total: z.number(),
           page: z.number(),
@@ -467,9 +486,10 @@ describe('Validation Integration (e2e)', () => {
         expect(error).toBeInstanceOf(BadRequestException);
         const response = (error as BadRequestException).getResponse();
         // The response might be wrapped in an object with statusCode, message, etc.
-        const errors = typeof response === 'object' && response !== null && 'message' in response
-          ? (response as { message: unknown }).message
-          : response;
+        const errors =
+          typeof response === 'object' && response !== null && 'message' in response
+            ? (response as { message: unknown }).message
+            : response;
 
         expect(Array.isArray(errors)).toBe(true);
         if (Array.isArray(errors)) {
@@ -480,7 +500,8 @@ describe('Validation Integration (e2e)', () => {
 
     it('should handle complex validation rules', () => {
       const complexSchema = z.object({
-        password: z.string()
+        password: z
+          .string()
           .min(8, 'Password must be at least 8 characters')
           .regex(/[A-Z]/, 'Password must contain uppercase letter')
           .regex(/[a-z]/, 'Password must contain lowercase letter')
@@ -499,9 +520,10 @@ describe('Validation Integration (e2e)', () => {
         expect(error).toBeInstanceOf(BadRequestException);
         const response = (error as BadRequestException).getResponse();
         // The response might be wrapped in an object with statusCode, message, etc.
-        const errors = typeof response === 'object' && response !== null && 'message' in response
-          ? (response as { message: unknown }).message
-          : response;
+        const errors =
+          typeof response === 'object' && response !== null && 'message' in response
+            ? (response as { message: unknown }).message
+            : response;
 
         expect(Array.isArray(errors)).toBe(true);
         if (Array.isArray(errors)) {
@@ -584,7 +606,10 @@ describe('Validation Integration (e2e)', () => {
 
     it('should handle whitespace-only strings', () => {
       const schema = z.object({
-        name: z.string().min(1).regex(/^\S.*\S$|^\S$/, 'Must not be whitespace-only'),
+        name: z
+          .string()
+          .min(1)
+          .regex(/^\S.*\S$|^\S$/, 'Must not be whitespace-only'),
       });
 
       expect(() => {

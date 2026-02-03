@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { ApolloServer } from '@apollo/server';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 
@@ -248,9 +247,7 @@ describe('GraphQL (e2e)', () => {
 
     it('should return 405 for OPTIONS request (CORS preflight)', async () => {
       // Express doesn't handle OPTIONS by default unless CORS is configured
-      await request(app.getHttpServer())
-        .options(graphqlUrl)
-        .expect(405);
+      await request(app.getHttpServer()).options(graphqlUrl).expect(405);
     });
 
     it('should return 404 for non-existent route', async () => {
@@ -266,8 +263,7 @@ describe('GraphQL (e2e)', () => {
   describe('GraphQL Playground', () => {
     it('should have playground enabled', async () => {
       // Check if playground endpoint responds
-      const response = await request(app.getHttpServer())
-        .get(graphqlUrl);
+      const response = await request(app.getHttpServer()).get(graphqlUrl);
 
       // GraphQL playground returns HTML for GET requests when enabled
       // We check if we got a successful response
