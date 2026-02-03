@@ -32,7 +32,7 @@ type Mutation {
   addRecentProject(gameVersion: String, name: String!, path: String!, screenshotPath: String, trechoCount: Int): RecentProject!
 
   """Create a new simulation history entry"""
-  createSimulationHistoryEntry(battleCount: Float!, configJson: String!, durationMs: Float!, hasReport: Boolean = false, projectName: String!, projectPath: String!, reportFilePath: String, status: String = "PENDING", summaryJson: String, trechoCount: Float!, ttkVersion: String!): SimulationHistoryEntryGraphQL!
+  createSimulationHistoryEntry(battleCount: Float!, configJson: String!, durationMs: Float!, hasReport: Boolean = false, projectName: String!, projectPath: String!, reportFilePath: String, status: SimulationStatus = PENDING, summaryJson: String, trechoCount: Float!, ttkVersion: String!): SimulationHistoryEntryGraphQL!
 
   """Delete a simulation history entry"""
   deleteSimulationHistory(id: String!): Boolean!
@@ -42,10 +42,10 @@ type Mutation {
   removeRecentProject(path: String!): SuccessResponse!
 
   """Update simulation status with state machine validation"""
-  updateSimulationStatus(id: String!, status: String!, summaryJson: String): SimulationHistoryEntryGraphQL!
+  updateSimulationStatus(id: String!, status: SimulationStatus!, summaryJson: String): SimulationHistoryEntryGraphQL!
 
   """Update user preferences"""
-  updateUserPreferences(autoSaveInterval: Float, language: String, lastProjectPath: String, maxHistoryEntries: Float, theme: ThemeMode, windowHeight: Float, windowIsMaximized: Boolean, windowWidth: Float, windowX: Float, windowY: Float): UserPreferencesGraphQL!
+  updateUserPreferences(autoSaveInterval: Float, language: String, lastProjectPath: String, maxHistoryEntries: Float, theme: ThemeMode, windowHeight: Float, windowIsMaximized: Boolean, windowWidth: Float, windowX: Float, windowY: Float): UserPreferences!
 }
 
 type PaginatedMeta {
@@ -69,13 +69,13 @@ type Query {
   recentProjects(gameVersion: String, limit: Int = 10, nameFilter: String, offset: Int = 0): PaginatedRecentProjects!
 
   """List simulation history entries with optional filters and pagination"""
-  simulationHistory(dateFrom: DateTime, dateTo: DateTime, page: Float = 1, perPage: Float = 20, projectPath: String, status: String, ttkVersion: String): [SimulationHistoryEntryGraphQL!]!
+  simulationHistory(dateFrom: DateTime, dateTo: DateTime, page: Float = 1, perPage: Float = 20, projectPath: String, status: SimulationStatus, ttkVersion: String): [SimulationHistoryEntryGraphQL!]!
 
   """Get a single simulation history entry by ID"""
   simulationHistoryEntry(id: String!): SimulationHistoryEntryGraphQL
 
   """Get user preferences with lazy initialization of defaults"""
-  userPreferences: UserPreferencesGraphQL!
+  userPreferences: UserPreferences!
 }
 
 type RecentProject {
@@ -100,7 +100,7 @@ type SimulationHistoryEntryGraphQL {
   projectName: String!
   projectPath: String!
   reportFilePath: String
-  status: String!
+  status: SimulationStatus!
   summaryJson: String
   timestamp: DateTime!
   trechoCount: Float!
@@ -108,12 +108,21 @@ type SimulationHistoryEntryGraphQL {
   updatedAt: DateTime!
 }
 
+"""Status of a simulation history entry"""
+enum SimulationStatus {
+  CANCELLED
+  COMPLETED
+  FAILED
+  PENDING
+  RUNNING
+}
+
 type Subscription {
   simulationHistoryChanged: SimulationHistoryEntryGraphQL!
   simulationStatusChanged(simulationId: String): SimulationHistoryEntryGraphQL!
 
   """Subscribe to user preferences changes"""
-  userPreferencesChanged: UserPreferencesGraphQL!
+  userPreferencesChanged: UserPreferences!
 }
 
 type SuccessResponse {
@@ -127,7 +136,7 @@ enum ThemeMode {
   SYSTEM
 }
 
-type UserPreferencesGraphQL {
+type UserPreferences {
   autoSaveInterval: Int!
   createdAt: DateTime!
   id: ID!

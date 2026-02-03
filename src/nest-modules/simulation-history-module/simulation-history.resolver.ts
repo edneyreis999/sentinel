@@ -1,4 +1,13 @@
-import { Resolver, Query, Mutation, Args, Subscription, ObjectType, Field } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Subscription,
+  ObjectType,
+  Field,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { Inject } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
 import {
@@ -15,6 +24,12 @@ import {
   DeleteSimulationHistoryInput,
 } from '@core/simulation-history/application';
 import { SimulationStatus } from '@core/simulation-history/domain';
+
+// Register SimulationStatus as a GraphQL enum
+registerEnumType(SimulationStatus, {
+  name: 'SimulationStatus',
+  description: 'Status of a simulation history entry',
+});
 
 const pubSub = new PubSub();
 
@@ -38,9 +53,9 @@ class SimulationHistoryEntryGraphQL {
     return '';
   }
 
-  @Field()
-  status(): string {
-    return '';
+  @Field(() => SimulationStatus)
+  status(): SimulationStatus {
+    return SimulationStatus.PENDING;
   }
 
   @Field()
@@ -127,7 +142,7 @@ export class SimulationHistoryResolver {
   })
   async simulationHistory(
     @Args('projectPath', { nullable: true }) projectPath?: string,
-    @Args('status', { type: () => String, nullable: true }) status?: string,
+    @Args('status', { type: () => SimulationStatus, nullable: true }) status?: SimulationStatus,
     @Args('ttkVersion', { nullable: true }) ttkVersion?: string,
     @Args('dateFrom', { type: () => Date, nullable: true }) dateFrom?: Date,
     @Args('dateTo', { type: () => Date, nullable: true }) dateTo?: Date,
@@ -171,8 +186,12 @@ export class SimulationHistoryResolver {
     @Args('durationMs') durationMs: number,
     @Args('battleCount') battleCount: number,
     @Args('trechoCount') trechoCount: number,
-    @Args('status', { type: () => String, nullable: true, defaultValue: 'PENDING' })
-    status?: string,
+    @Args('status', {
+      type: () => SimulationStatus,
+      nullable: true,
+      defaultValue: SimulationStatus.PENDING,
+    })
+    status?: SimulationStatus,
     @Args('summaryJson', { nullable: true }) summaryJson?: string,
     @Args('hasReport', { nullable: true, defaultValue: false }) hasReport?: boolean,
     @Args('reportFilePath', { nullable: true }) reportFilePath?: string,
@@ -180,7 +199,7 @@ export class SimulationHistoryResolver {
     const input: CreateSimulationHistoryInput = {
       projectPath,
       projectName,
-      status: status as SimulationStatus,
+      status,
       ttkVersion,
       configJson,
       summaryJson,
@@ -204,12 +223,12 @@ export class SimulationHistoryResolver {
   })
   async updateSimulationStatus(
     @Args('id') id: string,
-    @Args('status', { type: () => String }) status: string,
+    @Args('status', { type: () => SimulationStatus }) status: SimulationStatus,
     @Args('summaryJson', { nullable: true }) summaryJson?: string,
   ): Promise<SimulationHistoryEntryOutput> {
     const input: UpdateSimulationStatusInput = {
       id,
-      status: status as SimulationStatus,
+      status,
       summaryJson,
     };
 

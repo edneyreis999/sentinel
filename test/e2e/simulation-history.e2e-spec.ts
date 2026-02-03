@@ -44,8 +44,8 @@ describe('Simulation History Module (e2e)', () => {
             projectPath: "/test/project"
             projectName: "Test Project"
             ttkVersion: "1.0.0"
-            configJson: "{\"test\": true}"
-            summaryJson: "{\"summary\": \"test\"}"
+            configJson: "{'test': true}"
+            summaryJson: "{'summary': 'test'}"
             durationMs: 1000
             battleCount: 10
             trechoCount: 5
@@ -86,7 +86,7 @@ describe('Simulation History Module (e2e)', () => {
             projectName: "Test Project 2"
             status: RUNNING
             ttkVersion: "1.0.0"
-            configJson: "{\"test\": true}"
+            configJson: "{'test': true}"
             durationMs: 1000
             battleCount: 10
             trechoCount: 5
@@ -114,8 +114,8 @@ describe('Simulation History Module (e2e)', () => {
             projectName: "Test Project 3"
             status: COMPLETED
             ttkVersion: "1.0.0"
-            configJson: "{\"test\": true}"
-            summaryJson: "{\"result\": \"done\"}"
+            configJson: "{'test': true}"
+            summaryJson: "{'result': 'done'}"
             durationMs: 1000
             battleCount: 10
             trechoCount: 5
@@ -221,7 +221,7 @@ describe('Simulation History Module (e2e)', () => {
     it('should filter by status', async () => {
       const query = `
         query {
-          simulationHistory(status: "RUNNING") {
+          simulationHistory(status: RUNNING) {
             id
             status
           }
@@ -360,7 +360,8 @@ describe('Simulation History Module (e2e)', () => {
 
       const createResponse = await request(app.getHttpServer())
         .post(graphqlUrl)
-        .send({ query: createMutation });
+        .send({ query: createMutation })
+        .expect(200);
 
       const entryId = createResponse.body.data.createSimulationHistoryEntry.id;
 
@@ -418,7 +419,7 @@ describe('Simulation History Module (e2e)', () => {
           updateSimulationStatus(
             id: "${entryId}"
             status: COMPLETED
-            summaryJson: "{\"result\": \"success\"}"
+            summaryJson: "{'result': 'success'}"
           ) {
             id
             status
@@ -469,7 +470,7 @@ describe('Simulation History Module (e2e)', () => {
           updateSimulationStatus(
             id: "${entryId}"
             status: FAILED
-            summaryJson: "{\"error\": \"Something went wrong\"}"
+            summaryJson: "{'error': 'Something went wrong'}"
           ) {
             id
             status

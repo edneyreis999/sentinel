@@ -17,7 +17,7 @@ registerEnumType(ThemeMode, {
 /**
  * GraphQL Object Type for UserPreferences
  */
-@ObjectType()
+@ObjectType('UserPreferences')
 export class UserPreferencesGraphQL {
   @Field(() => ID)
   id!: string;
