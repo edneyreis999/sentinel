@@ -1,4 +1,4 @@
-import { ISimulationHistoryRepository } from '../../domain';
+import { ISimulationHistoryRepository, SimulationStatus } from '../../domain';
 import {
   UpdateSimulationStatusInput,
   SimulationHistoryEntryOutput,

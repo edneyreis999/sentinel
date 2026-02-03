@@ -1,4 +1,5 @@
 import { PrismaService } from '@database';
+import type { Prisma } from '@prisma/client';
 import {
   ISimulationHistoryRepository,
   SimulationHistoryFilters,
@@ -149,8 +150,9 @@ export class SimulationHistoryPrismaRepository implements ISimulationHistoryRepo
   /**
    * Maps Domain entity to Prisma model
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma model mapping
-  private toModel(entry: SimulationHistoryEntry): Record<string, any> {
+  private toModel(
+    entry: SimulationHistoryEntry,
+  ): Prisma.SimulationHistoryEntryUncheckedCreateInput {
     return {
       id: entry.id,
       projectPath: entry.projectPath,

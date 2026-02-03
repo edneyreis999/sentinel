@@ -17,6 +17,9 @@ import {
 // Import PrismaService for repository factory
 import { PrismaService } from '@database';
 
+// Domain interface
+import type { IRecentProjectsRepository } from '@core/recent-projects/domain';
+
 /**
  * Dependency Injection Providers for Recent Projects Module
  *
