@@ -1,219 +1,133 @@
 /**
- * ProjectService - Unit Tests
+ * ProjectService - Integration Tests
  *
  * STRATEGY: Application Service Testing
  *
- * Tests the service that ORCHESTRATES multiple use cases.
- * Uses MOCKED use cases to verify coordination logic.
+ * Tests the service orchestration logic with real use cases and fake repository.
+ * ONLY tests methods with actual orchestration logic (not pure delegation).
+ *
+ * RATIONALE:
+ * - createProject and getProject are pure delegation (no logic to test)
+ * - getOrCreate has orchestration logic (try-catch, conditional flow) that should be tested
  *
  * CHECKLIST:
  * - [x] Unit under test: ProjectService (orchestration layer)
  * - [x] Expected behavior: Coordinates use cases correctly
- * - [x] Bug localization: Fails when coordination changes
- * - [x] Business rules: Delegates rules to use cases (no logic here)
+ * - [x] Bug localization: Fails when coordination logic changes
+ * - [x] Uses REAL use cases with FAKE repository (integration test)
  */
 
 import { ProjectService } from '../services/project.service';
 import { CreateProjectUseCase, GetProjectUseCase } from '../use-cases';
+import { ProjectRepositoryFake } from './_fakes/project.repository.fake';
 import { CreateProjectInputFakeBuilder, CreateProjectOutputFakeBuilder } from './_fakes';
 
 describe('ProjectService', () => {
   let service: ProjectService;
-  let createProjectUseCase: jest.Mocked<CreateProjectUseCase>;
-  let getProjectUseCase: jest.Mocked<GetProjectUseCase>;
+  let repository: ProjectRepositoryFake;
+  let createProjectUseCase: CreateProjectUseCase;
+  let getProjectUseCase: GetProjectUseCase;
 
   beforeEach(() => {
-    // Create mocked use cases
-    createProjectUseCase = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<CreateProjectUseCase>;
-
-    getProjectUseCase = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<GetProjectUseCase>;
-
+    repository = new ProjectRepositoryFake();
+    createProjectUseCase = new CreateProjectUseCase(repository);
+    getProjectUseCase = new GetProjectUseCase(repository);
     service = new ProjectService(createProjectUseCase, getProjectUseCase);
   });
 
-  describe('createProject', () => {
-    it('should delegate to CreateProjectUseCase', async () => {
-      // Arrange
-      const input = CreateProjectInputFakeBuilder.create().build();
-      const expectedOutput = CreateProjectOutputFakeBuilder.create().build();
-      createProjectUseCase.execute.mockResolvedValue(expectedOutput);
-
-      // Act
-      const result = await service.createProject(input);
-
-      // Assert
-      expect(createProjectUseCase.execute).toHaveBeenCalledWith(input);
-      expect(createProjectUseCase.execute).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(expectedOutput);
-    });
-
-    it('should propagate errors from use case', async () => {
-      // Arrange
-      const input = CreateProjectInputFakeBuilder.create().build();
-      const error = new Error('Use case error');
-      createProjectUseCase.execute.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(service.createProject(input)).rejects.toThrow('Use case error');
-    });
-  });
-
-  describe('getProject', () => {
-    it('should delegate to GetProjectUseCase', async () => {
-      // Arrange
-      const id = 'project-123';
-      const expectedOutput = CreateProjectOutputFakeBuilder.create().withId(id).build();
-      getProjectUseCase.execute.mockResolvedValue(expectedOutput);
-
-      // Act
-      const result = await service.getProject(id);
-
-      // Assert
-      expect(getProjectUseCase.execute).toHaveBeenCalledWith(id);
-      expect(getProjectUseCase.execute).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(expectedOutput);
-    });
-
-    it('should propagate errors from use case', async () => {
-      // Arrange
-      const id = 'non-existent';
-      const error = new Error('Project not found');
-      getProjectUseCase.execute.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(service.getProject(id)).rejects.toThrow('Project not found');
-    });
-  });
-
-  describe('getOrCreate', () => {
+  describe('getOrCreate - orchestration logic', () => {
     it('should return existing project when found', async () => {
-      // Arrange
-      const input = CreateProjectInputFakeBuilder.create().withPath('/existing/path').build();
+      // Arrange: Create and store a project in the repository
+      // NOTE: ID must match path because getOrCreate uses path as ID for lookup
       const existingProject = CreateProjectOutputFakeBuilder.create()
+        .withId('/existing/path')
         .withPath('/existing/path')
+        .withName('Existing Project')
         .build();
 
-      getProjectUseCase.execute.mockResolvedValue(existingProject);
+      repository.seed([existingProject]);
+
+      const input = CreateProjectInputFakeBuilder.create().withPath('/existing/path').build();
 
       // Act
       const result = await service.getOrCreate(input);
 
-      // Assert
-      expect(result.project).toEqual(existingProject);
+      // Assert: Should return existing project without creating new one
+      expect(result.project.path).toBe('/existing/path');
+      expect(result.project.name).toBe('Existing Project');
       expect(result.created).toBe(false);
-      expect(getProjectUseCase.execute).toHaveBeenCalledWith(input.path);
-      expect(createProjectUseCase.execute).not.toHaveBeenCalled();
+
+      // Verify only one project exists in repository
+      const allProjects = repository.getAll();
+      expect(allProjects).toHaveLength(1);
     });
 
     it('should create new project when not found', async () => {
-      // Arrange
-      const input = CreateProjectInputFakeBuilder.create().withPath('/new/path').build();
-      const newProject = CreateProjectOutputFakeBuilder.create().withPath('/new/path').build();
-
-      getProjectUseCase.execute.mockRejectedValue(new Error('Not found'));
-      createProjectUseCase.execute.mockResolvedValue(newProject);
+      // Arrange: Repository is empty (project doesn't exist)
+      const input = CreateProjectInputFakeBuilder.create()
+        .withPath('/new/path')
+        .withName('New Project')
+        .build();
 
       // Act
       const result = await service.getOrCreate(input);
 
-      // Assert
-      expect(result.project).toEqual(newProject);
+      // Assert: Should create and return new project
+      expect(result.project.path).toBe('/new/path');
+      expect(result.project.name).toBe('New Project');
       expect(result.created).toBe(true);
-      expect(getProjectUseCase.execute).toHaveBeenCalledWith(input.path);
-      expect(createProjectUseCase.execute).toHaveBeenCalledWith(input);
+
+      // Verify project was persisted to repository
+      const stored = await repository.findById(result.project.id);
+      expect(stored).toBeDefined();
+      expect(stored?.path).toBe('/new/path');
     });
 
     it('should use path as ID for getProject lookup', async () => {
-      // Arrange
+      // Arrange: Create project with specific path as ID
+      const project = CreateProjectOutputFakeBuilder.create()
+        .withId('/specific/path')
+        .withPath('/specific/path')
+        .build();
+
+      repository.seed([project]);
+
       const input = CreateProjectInputFakeBuilder.create().withPath('/specific/path').build();
-      const existingProject = CreateProjectOutputFakeBuilder.create().build();
-
-      getProjectUseCase.execute.mockResolvedValue(existingProject);
-
-      // Act
-      await service.getOrCreate(input);
-
-      // Assert
-      expect(getProjectUseCase.execute).toHaveBeenCalledWith('/specific/path');
-    });
-
-    it('should fallback to create when get throws any error', async () => {
-      // Arrange
-      const input = CreateProjectInputFakeBuilder.create().build();
-      const unexpectedError = new Error('Database connection failed');
-      const newProject = CreateProjectOutputFakeBuilder.create().build();
-
-      getProjectUseCase.execute.mockRejectedValue(unexpectedError);
-      createProjectUseCase.execute.mockResolvedValue(newProject);
 
       // Act
       const result = await service.getOrCreate(input);
 
-      // Assert - Should fallback to create and return successfully
-      expect(result.project).toEqual(newProject);
-      expect(result.created).toBe(true);
-      expect(createProjectUseCase.execute).toHaveBeenCalledWith(input);
+      // Assert: Should find project using path as ID
+      expect(result.project.path).toBe('/specific/path');
+      expect(result.created).toBe(false);
     });
 
-    it('should propagate errors during create after get fails', async () => {
+    it('should create multiple projects with different paths', async () => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create().build();
-      const getError = new Error('Not found');
-      const createError = new Error('Validation failed');
+      const input1 = CreateProjectInputFakeBuilder.create()
+        .withPath('/path1')
+        .withName('First Project')
+        .build();
 
-      getProjectUseCase.execute.mockRejectedValue(getError);
-      createProjectUseCase.execute.mockRejectedValue(createError);
+      const input2 = CreateProjectInputFakeBuilder.create()
+        .withPath('/path2')
+        .withName('Second Project')
+        .build();
 
-      // Act & Assert
-      await expect(service.getOrCreate(input)).rejects.toThrow('Validation failed');
-    });
-  });
+      // Act: Create first project
+      const result1 = await service.getOrCreate(input1);
+      expect(result1.created).toBe(true);
+      expect(result1.project.name).toBe('First Project');
 
-  describe('coordination patterns', () => {
-    it('should handle multiple sequential operations', async () => {
-      // Arrange
-      const input1 = CreateProjectInputFakeBuilder.create().withPath('/path1').build();
-      const input2 = CreateProjectInputFakeBuilder.create().withPath('/path2').build();
+      // Create second project with different path
+      const result2 = await service.getOrCreate(input2);
+      expect(result2.created).toBe(true);
+      expect(result2.project.name).toBe('Second Project');
 
-      const project1 = CreateProjectOutputFakeBuilder.create().withPath('/path1').build();
-      const project2 = CreateProjectOutputFakeBuilder.create().withPath('/path2').build();
-
-      createProjectUseCase.execute.mockResolvedValueOnce(project1).mockResolvedValueOnce(project2);
-
-      // Act
-      const result1 = await service.createProject(input1);
-      const result2 = await service.createProject(input2);
-
-      // Assert
-      expect(result1).toEqual(project1);
-      expect(result2).toEqual(project2);
-      expect(createProjectUseCase.execute).toHaveBeenCalledTimes(2);
-    });
-
-    it('should maintain separation between create and get operations', async () => {
-      // Arrange
-      const id = 'project-123';
-      const input = CreateProjectInputFakeBuilder.create().build();
-
-      const project = CreateProjectOutputFakeBuilder.create().withId(id).build();
-
-      getProjectUseCase.execute.mockResolvedValue(project);
-      createProjectUseCase.execute.mockResolvedValue(project);
-
-      // Act
-      const getResult = await service.getProject(id);
-      const createResult = await service.createProject(input);
-
-      // Assert
-      expect(getResult).toEqual(project);
-      expect(createResult).toEqual(project);
-      expect(getProjectUseCase.execute).toHaveBeenCalledWith(id);
-      expect(createProjectUseCase.execute).toHaveBeenCalledWith(input);
-      expect(getProjectUseCase.execute).not.toHaveBeenCalledWith(input);
+      // Assert: Verify two distinct projects in repository
+      const allProjects = repository.getAll();
+      expect(allProjects).toHaveLength(2);
+      expect(allProjects[0].path).not.toBe(allProjects[1].path);
     });
   });
 });

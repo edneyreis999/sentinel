@@ -124,18 +124,22 @@ describe('GetProjectUseCase', () => {
   });
 
   describe('integration with repository', () => {
-    it('should call repository.findById with correct ID', async () => {
+    it('should retrieve project from repository by ID', async () => {
       // Arrange
-      const findByIdSpy = jest
-        .spyOn(repository, 'findById')
-        .mockResolvedValue(CreateProjectOutputFakeBuilder.create().build());
+      const project = CreateProjectOutputFakeBuilder.create()
+        .withId('test-id')
+        .withName('Repository Test Project')
+        .build();
+
+      (repository as ProjectRepositoryFake).seed([project]);
 
       // Act
-      await useCase.execute('test-id');
+      const result = await useCase.execute('test-id');
 
-      // Assert
-      expect(findByIdSpy).toHaveBeenCalledWith('test-id');
-      expect(findByIdSpy).toHaveBeenCalledTimes(1);
+      // Assert: Verify we got the correct project from repository
+      expect(result).toBeDefined();
+      expect(result.id).toBe('test-id');
+      expect(result.name).toBe('Repository Test Project');
     });
   });
 });

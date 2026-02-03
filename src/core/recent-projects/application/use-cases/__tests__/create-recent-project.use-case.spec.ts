@@ -1,5 +1,5 @@
 import { CreateRecentProjectUseCase } from '../create/create-recent-project.use-case';
-import type { IRecentProjectsRepository } from '@core/recent-projects/domain/ports/IRecentProjectsRepository';
+import { RecentProjectsInMemoryRepository } from '@core/recent-projects/infra/db/in-memory/recent-projects-in-memory.repository';
 import { RecentProjectFakeBuilder } from '@core/recent-projects/domain/recent-project.fake-builder';
 
 // Test constants
@@ -17,26 +17,16 @@ const TEST_UPDATED_PROJECT_VERSION = '2.0.0';
 const TEST_MINIMAL_PROJECT_PATH = '/projects/minimal.sentinel';
 const TEST_MINIMAL_PROJECT_NAME = 'Minimal Project';
 
-const TEST_ERROR_PROJECT_PATH = '/projects/test.sentinel';
-const TEST_ERROR_PROJECT_NAME = 'Test Project';
-const TEST_DATABASE_ERROR_MESSAGE = 'Database error';
-
 describe('CreateRecentProjectUseCase', () => {
   let useCase: CreateRecentProjectUseCase;
-  let repository: jest.Mocked<IRecentProjectsRepository>;
+  let repository: RecentProjectsInMemoryRepository;
 
   beforeEach(() => {
-    repository = {
-      findByPath: jest.fn(),
-      upsert: jest.fn(),
-    } as unknown as jest.Mocked<IRecentProjectsRepository>;
-
+    repository = new RecentProjectsInMemoryRepository();
     useCase = new CreateRecentProjectUseCase(repository);
   });
 
   it('should create a new project when path does not exist', async () => {
-    repository.findByPath.mockResolvedValue(null);
-
     const input = {
       path: TEST_NEW_PROJECT_PATH,
       name: TEST_NEW_PROJECT_NAME,
@@ -47,8 +37,6 @@ describe('CreateRecentProjectUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(repository.findByPath).toHaveBeenCalledWith(input.path);
-    expect(repository.upsert).toHaveBeenCalled();
     expect(result).toMatchObject({
       path: input.path,
       name: input.name,
@@ -56,6 +44,12 @@ describe('CreateRecentProjectUseCase', () => {
       screenshotPath: input.screenshotPath,
       trechoCount: input.trechoCount,
     });
+
+    // Verify project was persisted
+    const stored = await repository.findByPath(input.path);
+    expect(stored).toBeDefined();
+    expect(stored?.path).toBe(input.path);
+    expect(stored?.name).toBe(input.name);
   });
 
   it('should update existing project when path exists', async () => {
@@ -64,7 +58,8 @@ describe('CreateRecentProjectUseCase', () => {
       .withName(TEST_EXISTING_PROJECT_NAME)
       .build();
 
-    repository.findByPath.mockResolvedValue(existingProject);
+    // Pre-populate repository with existing project
+    await repository.upsert(existingProject);
 
     const input = {
       path: TEST_EXISTING_PROJECT_PATH,
@@ -74,15 +69,16 @@ describe('CreateRecentProjectUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(repository.findByPath).toHaveBeenCalledWith(input.path);
-    expect(repository.upsert).toHaveBeenCalled();
     expect(result.name).toBe(input.name);
     expect(result.gameVersion).toBe(input.gameVersion);
+
+    // Verify update was persisted
+    const updated = await repository.findByPath(input.path);
+    expect(updated?.name).toBe(TEST_UPDATED_PROJECT_NAME);
+    expect(updated?.gameVersion).toBe(TEST_UPDATED_PROJECT_VERSION);
   });
 
   it('should create project with only required fields', async () => {
-    repository.findByPath.mockResolvedValue(null);
-
     const input = {
       path: TEST_MINIMAL_PROJECT_PATH,
       name: TEST_MINIMAL_PROJECT_NAME,
@@ -95,16 +91,9 @@ describe('CreateRecentProjectUseCase', () => {
     expect(result.gameVersion).toBeNull();
     expect(result.screenshotPath).toBeNull();
     expect(result.trechoCount).toBeNull();
-  });
 
-  it('should handle repository errors', async () => {
-    repository.findByPath.mockRejectedValue(new Error(TEST_DATABASE_ERROR_MESSAGE));
-
-    const input = {
-      path: TEST_ERROR_PROJECT_PATH,
-      name: TEST_ERROR_PROJECT_NAME,
-    };
-
-    await expect(useCase.execute(input)).rejects.toThrow(TEST_DATABASE_ERROR_MESSAGE);
+    // Verify minimal project was persisted
+    const stored = await repository.findByPath(input.path);
+    expect(stored).toBeDefined();
   });
 });

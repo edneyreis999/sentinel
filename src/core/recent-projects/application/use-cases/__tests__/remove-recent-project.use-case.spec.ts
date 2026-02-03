@@ -1,5 +1,6 @@
 import { RemoveRecentProjectUseCase } from '../remove/remove-recent-project.use-case';
-import type { IRecentProjectsRepository } from '@core/recent-projects/domain/ports/IRecentProjectsRepository';
+import { RecentProjectsInMemoryRepository } from '@core/recent-projects/infra/db/in-memory/recent-projects-in-memory.repository';
+import { RecentProjectFakeBuilder } from '@core/recent-projects/domain/recent-project.fake-builder';
 import { DomainError } from '@core/shared/domain/errors';
 
 // Test constants
@@ -12,33 +13,34 @@ const ERROR_PATH_REQUIRED = 'Project path is required';
 
 describe('RemoveRecentProjectUseCase', () => {
   let useCase: RemoveRecentProjectUseCase;
-  let repository: jest.Mocked<IRecentProjectsRepository>;
+  let repository: RecentProjectsInMemoryRepository;
 
   beforeEach(() => {
-    repository = {
-      existsByPath: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as jest.Mocked<IRecentProjectsRepository>;
-
+    repository = new RecentProjectsInMemoryRepository();
     useCase = new RemoveRecentProjectUseCase(repository);
   });
 
   it('should remove existing project', async () => {
-    repository.existsByPath.mockResolvedValue(true);
+    // Arrange: Create a project in the repository
+    const project = RecentProjectFakeBuilder.aRecentProject()
+      .withPath(TEST_REMOVE_PROJECT_PATH)
+      .build();
+    await repository.upsert(project);
 
     const input = {
       path: TEST_REMOVE_PROJECT_PATH,
     };
 
+    // Act
     await useCase.execute(input);
 
-    expect(repository.existsByPath).toHaveBeenCalledWith(input.path);
-    expect(repository.delete).toHaveBeenCalledWith(input.path);
+    // Assert: Verify project was removed
+    const exists = await repository.existsByPath(input.path);
+    expect(exists).toBe(false);
   });
 
   it('should throw DomainError when project not found', async () => {
-    repository.existsByPath.mockResolvedValue(false);
-
+    // Repository is empty, so project doesn't exist
     const input = {
       path: TEST_NONEXISTENT_PROJECT_PATH,
     };
