@@ -8,6 +8,11 @@ import {
 import { z } from 'zod';
 import { AppModule } from '../../src/app.module';
 import { validateInput, validateResponse } from '../../src/core/shared/infra/validation';
+import { TEST_SCHEMAS } from './fixtures/test-schemas.fixture';
+import { toHaveValidationErrors, toHaveFieldError } from './matchers/validation-matchers';
+
+// Register custom matchers
+expect.extend({ toHaveValidationErrors, toHaveFieldError });
 
 describe('Validation Integration (e2e)', () => {
   let app: INestApplication;
@@ -33,12 +38,6 @@ describe('Validation Integration (e2e)', () => {
   });
 
   describe('validateInput function', () => {
-    const testSchema = z.object({
-      name: z.string().min(3),
-      email: z.string().email(),
-      age: z.number().min(0).max(120).optional(),
-    });
-
     it('should validate valid input data', () => {
       const validData = {
         name: 'John Doe',
@@ -46,7 +45,7 @@ describe('Validation Integration (e2e)', () => {
         age: 30,
       };
 
-      const result = validateInput(testSchema, validData, 'body');
+      const result = validateInput(TEST_SCHEMAS.user, validData, 'body');
 
       expect(result).toEqual(validData);
       expect(typeof result.name).toBe('string');
@@ -59,7 +58,7 @@ describe('Validation Integration (e2e)', () => {
         email: 'jane@example.com',
       };
 
-      const result = validateInput(testSchema, validData, 'body');
+      const result = validateInput(TEST_SCHEMAS.user, validData, 'body');
 
       expect(result.name).toBe('Jane Smith');
       expect(result.email).toBe('jane@example.com');
@@ -68,13 +67,13 @@ describe('Validation Integration (e2e)', () => {
 
     it('should throw BadRequestException for invalid input', () => {
       const invalidData = {
-        name: 'Jo', // Too short
-        email: 'invalid-email', // Not an email
-        age: 150, // Too high
+        name: 'Jo',
+        email: 'invalid-email',
+        age: 150,
       };
 
       expect(() => {
-        validateInput(testSchema, invalidData, 'body');
+        validateInput(TEST_SCHEMAS.user, invalidData, 'body');
       }).toThrow(BadRequestException);
     });
 
@@ -84,67 +83,36 @@ describe('Validation Integration (e2e)', () => {
         email: 'not-an-email',
       };
 
-      expect(() => {
-        validateInput(testSchema, invalidData, 'body');
-      }).toThrow(BadRequestException);
-
+      let thrownError: BadRequestException | null = null;
       try {
-        validateInput(testSchema, invalidData, 'body');
+        validateInput(TEST_SCHEMAS.user, invalidData, 'body');
       } catch (error) {
-        expect(error).toBeInstanceOf(BadRequestException);
-        const response = (error as BadRequestException).getResponse();
-        // The response might be wrapped in an object with statusCode, message, etc.
-        const errors =
-          typeof response === 'object' && response !== null && 'message' in response
-            ? (response as { message: unknown }).message
-            : response;
-
-        expect(Array.isArray(errors)).toBe(true);
-        if (Array.isArray(errors)) {
-          expect(errors).toHaveLength(2);
-          expect(errors[0]).toHaveProperty('field', 'name');
-          expect(errors[0]).toHaveProperty('source', 'body');
-          expect(errors[0]).toHaveProperty('message');
-          expect(errors[1]).toHaveProperty('field', 'email');
-          expect(errors[1]).toHaveProperty('source', 'body');
-          expect(errors[1]).toHaveProperty('message');
-        }
+        thrownError = error as BadRequestException;
       }
+
+      expect(thrownError).toBeInstanceOf(BadRequestException);
+      expect(thrownError).toHaveValidationErrors([
+        { field: 'name', source: 'body' },
+        { field: 'email', source: 'body' },
+      ]);
     });
 
     it('should include source in error details', () => {
       const invalidData = { name: 'Jo' };
 
-      expect(() => {
-        validateInput(testSchema, invalidData, 'query');
-      }).toThrow(BadRequestException);
-
+      let thrownError: BadRequestException | null = null;
       try {
-        validateInput(testSchema, invalidData, 'query');
+        validateInput(TEST_SCHEMAS.user, invalidData, 'query');
       } catch (error) {
-        expect(error).toBeInstanceOf(BadRequestException);
-        const response = (error as BadRequestException).getResponse();
-        // The response might be wrapped in an object with statusCode, message, etc.
-        const errors =
-          typeof response === 'object' && response !== null && 'message' in response
-            ? (response as { message: unknown }).message
-            : response;
-
-        expect(Array.isArray(errors)).toBe(true);
-        if (Array.isArray(errors)) {
-          expect(errors[0]).toHaveProperty('source', 'query');
-        }
+        thrownError = error as BadRequestException;
       }
+
+      expect(thrownError).toBeInstanceOf(BadRequestException);
+      expect(thrownError).toHaveFieldError('name', 'query');
+      expect(thrownError).toHaveFieldError('email', 'query');
     });
 
     it('should handle nested path in errors', () => {
-      const nestedSchema = z.object({
-        user: z.object({
-          name: z.string().min(3),
-          email: z.string().email(),
-        }),
-      });
-
       const invalidData = {
         user: {
           name: 'Jo',
@@ -152,70 +120,44 @@ describe('Validation Integration (e2e)', () => {
         },
       };
 
-      expect(() => {
-        validateInput(nestedSchema, invalidData, 'body');
-      }).toThrow(BadRequestException);
-
+      let thrownError: BadRequestException | null = null;
       try {
-        validateInput(nestedSchema, invalidData, 'body');
+        validateInput(TEST_SCHEMAS.nestedUser, invalidData, 'body');
       } catch (error) {
-        expect(error).toBeInstanceOf(BadRequestException);
-        const response = (error as BadRequestException).getResponse();
-        // The response might be wrapped in an object with statusCode, message, etc.
-        const errors =
-          typeof response === 'object' && response !== null && 'message' in response
-            ? (response as { message: unknown }).message
-            : response;
-
-        expect(Array.isArray(errors)).toBe(true);
-        if (Array.isArray(errors)) {
-          expect(errors[0].field).toBe('user.name');
-          expect(errors[1].field).toBe('user.email');
-        }
+        thrownError = error as BadRequestException;
       }
+
+      expect(thrownError).toBeInstanceOf(BadRequestException);
+      expect(thrownError).toHaveValidationErrors([
+        { field: 'user.name', source: 'body' },
+        { field: 'user.email', source: 'body' },
+      ]);
     });
 
     it('should validate number types correctly', () => {
-      const numberSchema = z.object({
-        count: z.number(),
-        price: z.number().positive(),
-      });
-
       const validData = { count: 10, price: 99.99 };
-      const result = validateInput(numberSchema, validData, 'body');
+      const result = validateInput(TEST_SCHEMAS.numberData, validData, 'body');
 
       expect(result.count).toBe(10);
       expect(result.price).toBe(99.99);
     });
 
     it('should reject invalid number types', () => {
-      const numberSchema = z.object({
-        count: z.number(),
-      });
-
       expect(() => {
-        validateInput(numberSchema, { count: 'not a number' }, 'body');
+        validateInput(TEST_SCHEMAS.numberData, { count: 'not a number' }, 'body');
       }).toThrow(BadRequestException);
     });
 
     it('should validate array types', () => {
-      const arraySchema = z.object({
-        tags: z.array(z.string()).min(1),
-      });
-
       const validData = { tags: ['typescript', 'testing'] };
-      const result = validateInput(arraySchema, validData, 'body');
+      const result = validateInput(TEST_SCHEMAS.arrayData, validData, 'body');
 
       expect(result.tags).toEqual(['typescript', 'testing']);
     });
 
     it('should reject empty arrays when min(1) is specified', () => {
-      const arraySchema = z.object({
-        tags: z.array(z.string()).min(1),
-      });
-
       expect(() => {
-        validateInput(arraySchema, { tags: [] }, 'body');
+        validateInput(TEST_SCHEMAS.arrayData, { tags: [] }, 'body');
       }).toThrow(BadRequestException);
     });
   });

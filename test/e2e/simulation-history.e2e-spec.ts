@@ -3,6 +3,8 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/database/prisma.service';
+import { SimulationHistoryEntryFakeBuilder } from '../../src/core/simulation-history/domain/__tests__/simulation-history-entry.fake-builder';
+import { SimulationStatus } from '../../src/core/simulation-history/domain/value-objects';
 
 describe('Simulation History Module (e2e)', () => {
   let app: INestApplication;
@@ -154,46 +156,43 @@ describe('Simulation History Module (e2e)', () => {
 
   describe('Query: simulationHistory', () => {
     beforeEach(async () => {
-      // Seed test data
+      // Seed test data using FakeBuilder
+      const entries = SimulationHistoryEntryFakeBuilder.theEntries(3)
+        .withProjectPath((index) => `/project${index + 1}`)
+        .withProjectName((index) => `Project ${index + 1}`)
+        .withStatus((index) => {
+          const statuses = [
+            SimulationStatus.PENDING,
+            SimulationStatus.RUNNING,
+            SimulationStatus.COMPLETED,
+          ];
+          return statuses[index];
+        })
+        .withDurationMs((index) => (index + 1) * 1000)
+        .withBattleCount((index) => (index + 1) * 10)
+        .withTrechoCount((index) => (index + 1) * 5)
+        .withSummaryJson((index) =>
+          index === 2 ? JSON.stringify({ result: 'success' }) : JSON.stringify({}),
+        )
+        .buildMany(3);
+
+      // Convert domain entities to Prisma-compatible format
       await prisma.simulationHistoryEntry.createMany({
-        data: [
-          {
-            projectPath: '/project1',
-            projectName: 'Project 1',
-            status: 'PENDING',
-            ttkVersion: '1.0.0',
-            configJson: '{}',
-            summaryJson: '{}',
-            hasReport: false,
-            durationMs: 1000,
-            battleCount: 10,
-            trechoCount: 5,
-          },
-          {
-            projectPath: '/project2',
-            projectName: 'Project 2',
-            status: 'RUNNING',
-            ttkVersion: '1.0.0',
-            configJson: '{}',
-            summaryJson: '{}',
-            hasReport: false,
-            durationMs: 2000,
-            battleCount: 20,
-            trechoCount: 10,
-          },
-          {
-            projectPath: '/project3',
-            projectName: 'Project 3',
-            status: 'COMPLETED',
-            ttkVersion: '1.0.0',
-            configJson: '{}',
-            summaryJson: '{"result": "success"}',
-            hasReport: false,
-            durationMs: 3000,
-            battleCount: 30,
-            trechoCount: 15,
-          },
-        ],
+        data: entries.map((entry) => ({
+          id: entry.id,
+          projectPath: entry.projectPath,
+          projectName: entry.projectName,
+          status: String(entry.status), // Convert enum to string
+          ttkVersion: entry.ttkVersion,
+          configJson: entry.configJson,
+          summaryJson: entry.summaryJson,
+          hasReport: entry.hasReport,
+          reportFilePath: entry.reportFilePath,
+          durationMs: entry.durationMs,
+          battleCount: entry.battleCount,
+          trechoCount: entry.trechoCount,
+          timestamp: entry.timestamp,
+        })),
       });
     });
 

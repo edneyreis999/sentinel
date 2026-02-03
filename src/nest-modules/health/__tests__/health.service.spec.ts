@@ -1,16 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HealthService } from './health.service';
-import { HealthStatusEnum } from './types/health-status.types';
+import { HealthService } from '../health.service';
+import { MemoryHealthIndicator } from '../indicators/memory-health.indicator';
+import { HealthStatusEnum } from '../types/health-status.types';
 
 describe('HealthService', () => {
   let service: HealthService;
+  let memoryIndicator: jest.Mocked<MemoryHealthIndicator>;
 
   beforeEach(async () => {
+    // Create mock for MemoryHealthIndicator
+    const mockMemoryIndicator = {
+      checkMemoryStatus: jest.fn(),
+      getMemoryUsagePercent: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [HealthService],
+      providers: [
+        HealthService,
+        {
+          provide: MemoryHealthIndicator,
+          useValue: mockMemoryIndicator,
+        },
+      ],
     }).compile();
 
     service = module.get<HealthService>(HealthService);
+    memoryIndicator = module.get(MemoryHealthIndicator);
   });
 
   afterEach(() => {
@@ -23,6 +38,8 @@ describe('HealthService', () => {
 
   describe('getStatus', () => {
     it('should return health status with all required fields', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+
       const result = service.getStatus();
 
       expect(result).toHaveProperty('status');
@@ -32,6 +49,8 @@ describe('HealthService', () => {
     });
 
     it('should return a valid version string', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+
       const result = service.getStatus();
 
       expect(result.version).toBeDefined();
@@ -40,6 +59,8 @@ describe('HealthService', () => {
     });
 
     it('should return uptime as a positive number', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+
       const result = service.getStatus();
 
       expect(result.uptime).toBeDefined();
@@ -48,77 +69,46 @@ describe('HealthService', () => {
     });
 
     it('should return a valid timestamp', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+
       const result = service.getStatus();
       const now = new Date();
 
       expect(result.timestamp).toBeInstanceOf(Date);
       expect(result.timestamp.getTime()).toBeLessThanOrEqual(now.getTime());
-      expect(result.timestamp.getTime()).toBeGreaterThan(
-        now.getTime() - 1000, // Within last second
-      );
+      expect(result.timestamp.getTime()).toBeGreaterThan(now.getTime() - 1000);
     });
 
-    it('should return HEALTHY status by default', () => {
-      // Mock process.memoryUsage to return low memory usage
-      const originalMemoryUsage = process.memoryUsage;
-      jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        heapUsed: 100 * 1024 * 1024, // 100MB
-        heapTotal: 200 * 1024 * 1024,
-        rss: 200 * 1024 * 1024,
-        arrayBuffers: 0,
-        external: 0,
-      });
+    it('should return HEALTHY status from memory indicator', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
 
       const result = service.getStatus();
 
       expect(result.status).toBe(HealthStatusEnum.HEALTHY);
-
-      process.memoryUsage = originalMemoryUsage;
+      expect(memoryIndicator.checkMemoryStatus).toHaveBeenCalled();
     });
 
-    it('should return DEGRADED status when memory usage is high', () => {
-      const os = require('os');
-      const totalMemory = os.totalmem();
-      const degradedMemoryThreshold = totalMemory * 0.8; // 80% usage
-
-      const originalMemoryUsage = process.memoryUsage;
-      jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        heapUsed: degradedMemoryThreshold,
-        heapTotal: degradedMemoryThreshold * 2,
-        rss: degradedMemoryThreshold * 2,
-        arrayBuffers: 0,
-        external: 0,
-      });
+    it('should return DEGRADED status from memory indicator', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.DEGRADED);
 
       const result = service.getStatus();
 
       expect(result.status).toBe(HealthStatusEnum.DEGRADED);
-
-      process.memoryUsage = originalMemoryUsage;
+      expect(memoryIndicator.checkMemoryStatus).toHaveBeenCalled();
     });
 
-    it('should return UNHEALTHY status when memory usage is critical', () => {
-      const os = require('os');
-      const totalMemory = os.totalmem();
-      const unhealthyMemoryThreshold = totalMemory * 0.95; // 95% usage
-
-      const originalMemoryUsage = process.memoryUsage;
-      jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        heapUsed: unhealthyMemoryThreshold,
-        heapTotal: unhealthyMemoryThreshold * 2,
-        rss: unhealthyMemoryThreshold * 2,
-        arrayBuffers: 0,
-        external: 0,
-      });
+    it('should return UNHEALTHY status from memory indicator', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.UNHEALTHY);
 
       const result = service.getStatus();
 
       expect(result.status).toBe(HealthStatusEnum.UNHEALTHY);
-
-      process.memoryUsage = originalMemoryUsage;
+      expect(memoryIndicator.checkMemoryStatus).toHaveBeenCalled();
     });
 
     it('should return consistent version across multiple calls', () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+
       const result1 = service.getStatus();
       const result2 = service.getStatus();
 
@@ -126,6 +116,8 @@ describe('HealthService', () => {
     });
 
     it('should return increasing uptime', async () => {
+      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+
       const result1 = service.getStatus();
       await new Promise((resolve) => setTimeout(resolve, 100));
       const result2 = service.getStatus();

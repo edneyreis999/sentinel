@@ -8,6 +8,13 @@ import { HealthModule } from '../health.module';
 import { HealthService } from '../health.service';
 import { HealthStatusEnum } from '../types/health-status.types';
 
+// Test constants
+const TEST_DELAYS = {
+  UPTIME_CHECK_MS: 100,
+} as const;
+
+const ACCEPTABLE_UPTIME_DELTA_SECONDS = 1;
+
 describe('Health E2E Tests', () => {
   let app: INestApplication;
   let healthService: HealthService;
@@ -56,11 +63,13 @@ describe('Health E2E Tests', () => {
     it('should return consistent health data on multiple calls', async () => {
       const response1 = await request(app.getHttpServer()).get('/health').expect(200);
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, TEST_DELAYS.UPTIME_CHECK_MS));
 
       const response2 = await request(app.getHttpServer()).get('/health').expect(200);
 
+      // Version should remain constant across calls
       expect(response1.body.version).toBe(response2.body.version);
+      // Uptime should increase between calls
       expect(response2.body.uptime).toBeGreaterThan(response1.body.uptime);
     });
   });
@@ -112,11 +121,12 @@ describe('Health E2E Tests', () => {
         })
         .expect(200);
 
+      // Version should match between REST and GraphQL endpoints
       expect(restResponse.body.version).toBe(graphqlResponse.body.data.health.version);
-      // Uptime should be close (within 1 second)
+      // Uptime should be within 1 second between REST and GraphQL calls
       expect(
         Math.abs(restResponse.body.uptime - graphqlResponse.body.data.health.uptime),
-      ).toBeLessThan(1);
+      ).toBeLessThan(ACCEPTABLE_UPTIME_DELTA_SECONDS);
     });
   });
 

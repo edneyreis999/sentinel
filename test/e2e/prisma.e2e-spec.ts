@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { execSync } from 'child_process';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/database/prisma.service';
 
@@ -8,8 +10,20 @@ describe('PrismaService (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
   let prismaService: PrismaService;
+  let container: StartedPostgreSqlContainer;
 
   beforeAll(async () => {
+    // Start PostgreSQL container for real database testing
+    container = await new PostgreSqlContainer('postgres:16-alpine')
+      .withDatabase('sentinel_test')
+      .withUsername('test')
+      .withPassword('test')
+      .withExposedPorts(5432)
+      .start();
+
+    // Set DATABASE_URL for the test environment
+    process.env.DATABASE_URL = container.getConnectionUri();
+
     moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -24,47 +38,44 @@ describe('PrismaService (e2e)', () => {
     await app.init();
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
+
+    // Run migrations to set up database schema
+    execSync('npx prisma migrate deploy', {
+      env: { ...process.env, DATABASE_URL: container.getConnectionUri() },
+      stdio: 'inherit',
+    });
   });
 
   afterAll(async () => {
     await prismaService.$disconnect();
     await app.close();
+    await container.stop();
   });
 
   describe('Database Connection', () => {
     it('should connect to database successfully', async () => {
-      // Verify connection through health endpoint
       const response = await request(app.getHttpServer()).get('/health').expect(200);
 
-      expect(response.body.services.database.status).toBeDefined();
-      expect(['up', 'down']).toContain(response.body.services.database.status);
+      // Health endpoint should return successfully
+      expect(response.body.status).toBeDefined();
+      expect(['HEALTHY', 'DEGRADED', 'UNHEALTHY']).toContain(response.body.status);
     });
 
     it('should execute raw query successfully', async () => {
-      // This test will fail if database is not configured, which is expected
-      try {
-        const result = await prismaService.$queryRaw`SELECT 1 as result`;
-        expect(result).toBeDefined();
-        expect(Array.isArray(result)).toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable for E2E tests
-        expect(error).toBeDefined();
-      }
+      const result = await prismaService.$queryRaw`SELECT 1 as result`;
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
     });
 
     it('should measure database latency', async () => {
-      // This test will fail if database is not configured, which is expected
-      try {
-        const startTime = Date.now();
-        await prismaService.$queryRaw`SELECT 1`;
-        const latency = Date.now() - startTime;
+      const startTime = Date.now();
+      await prismaService.$queryRaw`SELECT 1`;
+      const latency = Date.now() - startTime;
 
-        expect(latency).toBeGreaterThanOrEqual(0);
-        expect(latency).toBeLessThan(5000); // Should be under 5 seconds
-      } catch (error) {
-        // If database is not configured, that's acceptable for E2E tests
-        expect(error).toBeDefined();
-      }
+      expect(latency).toBeGreaterThanOrEqual(0);
+      expect(latency).toBeLessThan(5000);
     });
   });
 
@@ -77,36 +88,26 @@ describe('PrismaService (e2e)', () => {
     });
 
     it('should have access to all defined models', () => {
-      // Based on schema.prisma models
       expect(prismaService).toHaveProperty('recentProject');
       expect(prismaService).toHaveProperty('userPreferences');
       expect(prismaService).toHaveProperty('simulationHistoryEntry');
     });
 
     it('should execute $transaction successfully', async () => {
-      // Test transaction with a simple query - wrapped in try/catch for no DB scenario
-      try {
-        await prismaService.$transaction(async (tx) => {
-          const result = await tx.$queryRaw`SELECT 1 as test`;
-          expect(result).toBeDefined();
-        });
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      await prismaService.$transaction(async (tx) => {
+        const result = await tx.$queryRaw`SELECT 1 as test`;
+        expect(result).toBeDefined();
+        expect(Array.isArray(result)).toBe(true);
+      });
     });
 
     it('should handle batch operations', async () => {
-      // Test batch queries - wrapped in try/catch for no DB scenario
-      try {
-        const queries = [prismaService.$queryRaw`SELECT 1`, prismaService.$queryRaw`SELECT 2`];
+      const queries = [prismaService.$queryRaw`SELECT 1`, prismaService.$queryRaw`SELECT 2`];
 
-        const results = await Promise.all(queries);
-        expect(results).toHaveLength(2);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const results = await Promise.all(queries);
+      expect(results).toHaveLength(2);
+      expect(results[0]).toBeDefined();
+      expect(results[1]).toBeDefined();
     });
   });
 
@@ -123,19 +124,13 @@ describe('PrismaService (e2e)', () => {
     });
 
     it('should query RecentProject model', async () => {
-      // Empty result is valid - just checking query works
-      try {
-        const result = await prismaService.recentProject.findMany();
-        expect(Array.isArray(result)).toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const result = await prismaService.recentProject.findMany();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
 
     it('should respect model fields constraints', async () => {
-      // Verify unique constraint on path field exists
-      // This is a metadata check - actual constraint enforcement happens at DB level
       const model = prismaService.recentProject;
       expect(model).toBeDefined();
     });
@@ -154,28 +149,18 @@ describe('PrismaService (e2e)', () => {
     });
 
     it('should query UserPreferences model', async () => {
-      try {
-        const result = await prismaService.userPreferences.findMany();
-        expect(Array.isArray(result)).toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const result = await prismaService.userPreferences.findMany();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
 
     it('should handle default userId', async () => {
-      // Check if default user preferences exist
-      try {
-        const result = await prismaService.userPreferences.findUnique({
-          where: { userId: 'default' },
-        });
+      const result = await prismaService.userPreferences.findUnique({
+        where: { userId: 'default' },
+      });
 
-        // Result may be null or have data - both are valid
-        expect(result === null || typeof result === 'object').toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      expect(result === null || typeof result === 'object').toBe(true);
     });
   });
 
@@ -192,53 +177,37 @@ describe('PrismaService (e2e)', () => {
     });
 
     it('should query SimulationHistoryEntry model', async () => {
-      try {
-        const result = await prismaService.simulationHistoryEntry.findMany();
-        expect(Array.isArray(result)).toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const result = await prismaService.simulationHistoryEntry.findMany();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
 
     it('should respect composite indexes', async () => {
-      // Verify query works with index fields
-      try {
-        const result = await prismaService.simulationHistoryEntry.findMany({
-          where: {
-            projectPath: 'test-path',
-          },
-          orderBy: {
-            timestamp: 'desc',
-          },
-          take: 10,
-        });
+      const result = await prismaService.simulationHistoryEntry.findMany({
+        where: {
+          projectPath: 'test-path',
+        },
+        orderBy: {
+          timestamp: 'desc',
+        },
+        take: 10,
+      });
 
-        expect(Array.isArray(result)).toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
   });
 
   describe('Lifecycle Hooks', () => {
     it('should call onModuleInit during initialization', async () => {
-      // Service should be connected
       expect(prismaService).toBeDefined();
 
-      // Verify connection is active
-      try {
-        const result = await prismaService.$queryRaw`SELECT 1`;
-        expect(result).toBeDefined();
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const result = await prismaService.$queryRaw`SELECT 1`;
+      expect(result).toBeDefined();
     });
 
     it('should handle graceful shutdown', async () => {
-      // Create a new testing module to test shutdown
       const testModule = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -249,138 +218,101 @@ describe('PrismaService (e2e)', () => {
       await testApp.init();
       expect(testPrisma).toBeDefined();
 
-      // Shutdown should work without errors
       await testApp.close();
     });
   });
 
   describe('Error Handling', () => {
     it('should handle invalid query gracefully', async () => {
-      try {
-        await expect(prismaService.$queryRaw`SELECT * FROM nonexistent_table`).rejects.toThrow();
-      } catch (error) {
-        // If database is not configured, we still pass the test
-        expect(error).toBeDefined();
-      }
+      await expect(prismaService.$queryRaw`SELECT * FROM nonexistent_table`).rejects.toThrow();
     });
 
     it('should handle transaction rollback on error', async () => {
-      try {
-        await expect(
-          prismaService.$transaction(async (tx) => {
-            await tx.$queryRaw`SELECT 1`;
-            throw new Error('Test error');
-          }),
-        ).rejects.toThrow('Test error');
-      } catch (error) {
-        // If database is not configured, we still pass the test
-        expect(error).toBeDefined();
-      }
+      await expect(
+        prismaService.$transaction(async (tx) => {
+          await tx.$queryRaw`SELECT 1`;
+          throw new Error('Test error');
+        }),
+      ).rejects.toThrow('Test error');
     });
 
     it('should handle connection errors gracefully', async () => {
-      // This test verifies error handling without actually breaking connection
-      // In real scenarios, connection errors would be logged
       expect(prismaService).toBeDefined();
     });
   });
 
   describe('Prisma Features', () => {
     it('should support transaction operations', async () => {
-      // Test that transactions work
-      try {
-        await prismaService.$transaction(async (tx) => {
-          await tx.$queryRaw`SELECT 1`;
-        });
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      await prismaService.$transaction(async (tx) => {
+        const result = await tx.$queryRaw`SELECT 1`;
+        expect(result).toBeDefined();
+      });
     });
 
     it('should execute queries in isolation', async () => {
-      // Verify query isolation
-      try {
-        const result1 = await prismaService.$queryRaw`SELECT 1 as id`;
-        const result2 = await prismaService.$queryRaw`SELECT 2 as id`;
+      const result1 = await prismaService.$queryRaw`SELECT 1 as id`;
+      const result2 = await prismaService.$queryRaw`SELECT 2 as id`;
 
-        expect(result1).toBeDefined();
-        expect(result2).toBeDefined();
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      expect(result1).toBeDefined();
+      expect(result2).toBeDefined();
+      expect(result1).not.toEqual(result2);
     });
   });
 
   describe('Database Schema Integrity', () => {
     it('should have all required tables', async () => {
-      try {
-        const tables = await prismaService.$queryRaw`
-          SELECT table_name
-          FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_type = 'BASE TABLE'
-        `;
+      const tables = await prismaService.$queryRaw<Array<{ table_name: string }>>`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_type = 'BASE TABLE'
+      `;
 
-        expect(Array.isArray(tables)).toBe(true);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      expect(Array.isArray(tables)).toBe(true);
+      expect(tables.length).toBeGreaterThan(0);
+
+      const tableNames = tables.map((t) => t.table_name);
+      // Prisma uses snake_case for table names
+      expect(tableNames).toContain('recent_projects');
+      expect(tableNames).toContain('user_preferences');
+      expect(tableNames).toContain('simulation_history_v2');
     });
 
     it('should respect foreign key constraints', async () => {
-      // Foreign key constraints are enforced at database level
-      // This test verifies the service doesn't bypass them
       expect(prismaService).toBeDefined();
     });
 
     it('should respect unique constraints', async () => {
-      // Unique constraints are enforced at database level
-      // This test verifies the service respects them
       expect(prismaService).toBeDefined();
     });
   });
 
   describe('Performance', () => {
     it('should handle concurrent queries', async () => {
-      try {
-        const promises = Array.from({ length: 10 }, () => prismaService.$queryRaw`SELECT 1 as id`);
+      const promises = Array.from({ length: 10 }, () => prismaService.$queryRaw`SELECT 1 as id`);
 
-        const results = await Promise.all(promises);
-        expect(results).toHaveLength(10);
-        results.forEach((result) => {
-          expect(result).toBeDefined();
-        });
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const results = await Promise.all(promises);
+
+      expect(results).toHaveLength(10);
+      results.forEach((result) => {
+        expect(result).toBeDefined();
+        expect(Array.isArray(result)).toBe(true);
+      });
     });
 
     it('should reuse connections efficiently', async () => {
-      // Connection pooling is handled by Prisma
-      // This test verifies multiple queries complete successfully
-      try {
-        const queries = Array.from(
-          { length: 5 },
-          (_, i) => prismaService.$queryRaw`SELECT ${i + 1} as id`,
-        );
+      const queries = Array.from(
+        { length: 5 },
+        (_, i) => prismaService.$queryRaw`SELECT ${i + 1} as id`,
+      );
 
-        const results = await Promise.all(queries);
-        expect(results).toHaveLength(5);
-      } catch (error) {
-        // If database is not configured, that's acceptable
-        expect(error).toBeDefined();
-      }
+      const results = await Promise.all(queries);
+      expect(results).toHaveLength(5);
     });
   });
 
   describe('Logging', () => {
     it('should have logging configured', () => {
-      // PrismaService is configured with log levels
-      // We can't easily test actual logging output without mocking console
       expect(prismaService).toBeDefined();
     });
   });

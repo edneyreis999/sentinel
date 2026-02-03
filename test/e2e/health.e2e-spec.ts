@@ -3,6 +3,13 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 
+// Test constants
+const TEST_DELAYS = {
+  UPTIME_CHECK_MS: 100,
+} as const;
+
+const ACCEPTABLE_UPTIME_DELTA_SECONDS = 1;
+
 describe('HealthController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
@@ -59,12 +66,15 @@ describe('HealthController (e2e)', () => {
     it('should return consistent health status on repeated calls', async () => {
       const firstResponse = await request(app.getHttpServer()).get('/health').expect(200);
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, TEST_DELAYS.UPTIME_CHECK_MS));
 
       const secondResponse = await request(app.getHttpServer()).get('/health').expect(200);
 
+      // Health status should remain consistent across calls
       expect(firstResponse.body.status).toBe(secondResponse.body.status);
+      // Version should remain constant across calls
       expect(firstResponse.body.version).toBe(secondResponse.body.version);
+      // Uptime should increase between calls
       expect(secondResponse.body.uptime).toBeGreaterThan(firstResponse.body.uptime);
     });
   });
@@ -110,11 +120,12 @@ describe('HealthController (e2e)', () => {
         })
         .expect(200);
 
+      // Version should match between REST and GraphQL endpoints
       expect(restResponse.body.version).toBe(graphqlResponse.body.data.health.version);
-      // Uptime should be close (within 1 second)
+      // Uptime should be within 1 second between REST and GraphQL calls
       expect(
         Math.abs(restResponse.body.uptime - graphqlResponse.body.data.health.uptime),
-      ).toBeLessThan(1);
+      ).toBeLessThan(ACCEPTABLE_UPTIME_DELTA_SECONDS);
     });
   });
 });
