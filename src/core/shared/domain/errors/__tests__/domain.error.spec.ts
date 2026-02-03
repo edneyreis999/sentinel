@@ -49,9 +49,6 @@ describe('DomainError', () => {
     it('should be immutable', () => {
       const error = new DomainError('Test error');
 
-      // Try to modify (TypeScript should prevent this at compile time)
-      // At runtime, readonly properties can still be modified in JS
-      // but the intent is immutability
       expect(error.message).toBe('Test error');
       expect(error.statusCode).toBe(400);
       expect(error.name).toBe('DomainError');
@@ -59,31 +56,31 @@ describe('DomainError', () => {
   });
 
   describe('typical domain error scenarios', () => {
-    it('should represent business rule violations', () => {
-      const error = new DomainError('Account balance cannot be negative');
+    it.each([
+      {
+        message: 'Account balance cannot be negative',
+        contains: 'cannot',
+        scenario: 'business rule violations',
+      },
+      {
+        message: 'Email address is invalid',
+        contains: 'invalid',
+        scenario: 'validation failures',
+      },
+      {
+        message: 'Category name must be unique',
+        contains: 'must be',
+        scenario: 'invariant violations',
+      },
+      {
+        message: 'Cannot delete published document',
+        contains: 'Cannot',
+        scenario: 'state transition violations',
+      },
+    ])('should represent $scenario', ({ message, contains }) => {
+      const error = new DomainError(message);
 
-      expect(error.message).toContain('cannot');
-      expect(error.statusCode).toBe(400);
-    });
-
-    it('should represent validation failures', () => {
-      const error = new DomainError('Email address is invalid');
-
-      expect(error.message).toContain('invalid');
-      expect(error.statusCode).toBe(400);
-    });
-
-    it('should represent invariant violations', () => {
-      const error = new DomainError('Category name must be unique');
-
-      expect(error.message).toContain('must be');
-      expect(error.statusCode).toBe(400);
-    });
-
-    it('should represent state transition violations', () => {
-      const error = new DomainError('Cannot delete published document');
-
-      expect(error.message).toContain('Cannot');
+      expect(error.message).toContain(contains);
       expect(error.statusCode).toBe(400);
     });
   });
@@ -124,42 +121,42 @@ describe('DomainError', () => {
   });
 
   describe('error messages for different domain contexts', () => {
-    it('should handle error messages for entity validation', () => {
-      const errors = [
-        new DomainError('Entity ID cannot be empty'),
-        new DomainError('Entity name is required'),
-        new DomainError('Entity version must be positive'),
-      ];
+    describe('entity validation errors', () => {
+      it.each([
+        'Entity ID cannot be empty',
+        'Entity name is required',
+        'Entity version must be positive',
+      ])('should handle error message: %s', (message) => {
+        const error = new DomainError(message);
 
-      errors.forEach((error) => {
         expect(error.statusCode).toBe(400);
         expect(error.name).toBe('DomainError');
         expect(error.message).toBeTruthy();
       });
     });
 
-    it('should handle error messages for value object validation', () => {
-      const errors = [
-        new DomainError('Invalid email format'),
-        new DomainError('URL must start with http:// or https://'),
-        new DomainError('Date cannot be in the past'),
-      ];
+    describe('value object validation errors', () => {
+      it.each([
+        'Invalid email format',
+        'URL must start with http:// or https://',
+        'Date cannot be in the past',
+      ])('should handle error message: %s', (message) => {
+        const error = new DomainError(message);
 
-      errors.forEach((error) => {
         expect(error.statusCode).toBe(400);
         expect(error.name).toBe('DomainError');
         expect(error.message).toBeTruthy();
       });
     });
 
-    it('should handle error messages for aggregate rules', () => {
-      const errors = [
-        new DomainError('Cannot add item to completed order'),
-        new DomainError('Maximum team size exceeded'),
-        new DomainError('Project requires at least one owner'),
-      ];
+    describe('aggregate rule errors', () => {
+      it.each([
+        'Cannot add item to completed order',
+        'Maximum team size exceeded',
+        'Project requires at least one owner',
+      ])('should handle error message: %s', (message) => {
+        const error = new DomainError(message);
 
-      errors.forEach((error) => {
         expect(error.statusCode).toBe(400);
         expect(error.name).toBe('DomainError');
         expect(error.message).toBeTruthy();
@@ -171,22 +168,18 @@ describe('DomainError', () => {
     it('should have correct properties for serialization', () => {
       const error = new DomainError('Serialization test');
 
-      // Error.message is not enumerable in JavaScript, so it won't serialize to JSON
-      // This test verifies the properties are set correctly on the error object
       expect(error.name).toBe('DomainError');
       expect(error.message).toBe('Serialization test');
       expect(error.statusCode).toBe(400);
     });
 
-    it('should handle empty message', () => {
-      const error = new DomainError('');
-
-      expect(error.message).toBe('');
-      expect(error.statusCode).toBe(400);
-    });
-
-    it('should handle multiline messages', () => {
-      const message = 'Multiple validation errors:\n- Field 1 is required\n- Field 2 is invalid';
+    it.each([
+      { message: '', description: 'empty message' },
+      {
+        message: 'Multiple validation errors:\n- Field 1 is required\n- Field 2 is invalid',
+        description: 'multiline message',
+      },
+    ])('should handle $description', ({ message }) => {
       const error = new DomainError(message);
 
       expect(error.message).toBe(message);
@@ -196,20 +189,6 @@ describe('DomainError', () => {
 
   describe('inheritance scenarios', () => {
     it('should document that custom domain errors should extend BaseError directly', () => {
-      // This test documents the pattern: for custom domain errors with different
-      // names or status codes, extend BaseError directly, not DomainError
-      //
-      // Example pattern (commented out as it would be in a separate file):
-      //
-      // class CategoryNotFoundError extends BaseError {
-      //   readonly statusCode = 404;
-      //   readonly name = 'CategoryNotFoundError';
-      //
-      //   constructor(categoryId: string) {
-      //     super(`Category with ID ${categoryId} not found`);
-      //   }
-      // }
-
       // DomainError is best used as-is for general domain errors
       const error = new DomainError('Category with ID 123 not found');
 
@@ -218,19 +197,15 @@ describe('DomainError', () => {
       expect(error.message).toContain('123');
     });
 
-    it('should show DomainError is intended for general 400 errors', () => {
-      // DomainError provides a consistent 400 status code for all business rule violations
-      // Use it directly rather than extending it
-      const errors = [
-        new DomainError('Email must be unique'),
-        new DomainError('Password does not meet requirements'),
-        new DomainError('Account is already active'),
-      ];
+    it.each([
+      'Email must be unique',
+      'Password does not meet requirements',
+      'Account is already active',
+    ])('should provide consistent 400 status for: %s', (message) => {
+      const error = new DomainError(message);
 
-      errors.forEach((error) => {
-        expect(error.statusCode).toBe(400);
-        expect(error.name).toBe('DomainError');
-      });
+      expect(error.statusCode).toBe(400);
+      expect(error.name).toBe('DomainError');
     });
   });
 
@@ -270,11 +245,17 @@ describe('DomainError', () => {
 
   describe('special characters in messages', () => {
     it.each([
-      ['Validation failed: Ñoño', 'Ñoño'],
-      ['Error: Test™ symbol', '™'],
-      ['Error with emoji: Invalid value ❌', '❌'],
-      ['Error with unicode: 中文测试', '中文'],
-    ])('should handle special characters: %s', (message, substring) => {
+      { message: 'Validation failed: Ñoño', substring: 'Ñoño', description: 'Spanish characters' },
+      { message: 'Error: Test™ symbol', substring: '™', description: 'trademark symbol' },
+      { message: 'Error with emoji: Invalid value ❌', substring: '❌', description: 'emoji' },
+      {
+        message: 'Error with unicode: 中文测试',
+        substring: '中文',
+        description: 'Chinese characters',
+      },
+      { message: 'Привет мир', substring: 'Привет', description: 'Cyrillic characters' },
+      { message: 'مرحبا', substring: 'مرحبا', description: 'Arabic characters' },
+    ])('should handle $description: $message', ({ message, substring }) => {
       const error = new DomainError(message);
 
       expect(error.message).toContain(substring);

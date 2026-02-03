@@ -4,7 +4,7 @@ import { UserPreferencesFakeBuilder } from './user-preferences.fake-builder';
 describe('UserPreferences Aggregate', () => {
   describe('createDefaults', () => {
     it('should create preferences with default values', () => {
-      const prefs = UserPreferences.createDefaults('test-user');
+      const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('test-user').build();
 
       expect(prefs.userId).toBe('test-user');
       expect(prefs.theme).toBe('SYSTEM');
@@ -23,31 +23,30 @@ describe('UserPreferences Aggregate', () => {
     });
 
     it('should use "default" userId when not provided', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
       expect(prefs.userId).toBe('default');
     });
   });
 
   describe('create', () => {
-    it('should create preferences from props', () => {
+    it('should create preferences from props using FakeBuilder', () => {
       const now = new Date();
-      const prefs = UserPreferences.create({
-        id: 'test-id',
-        userId: 'user-1',
-        theme: 'DARK',
-        language: 'en-US',
-        windowWidth: 1920,
-        windowHeight: 1080,
-        windowX: 100,
-        windowY: 100,
-        windowIsMaximized: true,
-        autoSaveInterval: 60000,
-        maxHistoryEntries: 200,
-        lastProjectPath: '/path/to/project',
-        lastOpenDate: now,
-        createdAt: now,
-        updatedAt: now,
-      });
+      const prefs = UserPreferencesFakeBuilder.anEntity()
+        .withUserId('user-1')
+        .withTheme('DARK')
+        .withLanguage('en-US')
+        .withWindowWidth(1920)
+        .withWindowHeight(1080)
+        .withWindowX(100)
+        .withWindowY(100)
+        .withWindowIsMaximized(true)
+        .withAutoSaveInterval(60000)
+        .withMaxHistoryEntries(200)
+        .withLastProjectPath('/path/to/project')
+        .withLastOpenDate(now)
+        .withCreatedAt(now)
+        .withUpdatedAt(now)
+        .build();
 
       expect(prefs.userId).toBe('user-1');
       expect(prefs.theme).toBe('DARK');
@@ -66,10 +65,9 @@ describe('UserPreferences Aggregate', () => {
 
   describe('changeTheme', () => {
     it('should change theme and update updatedAt', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
       const originalUpdatedAt = prefs.updatedAt;
 
-      // Wait a bit to ensure timestamp difference
       prefs.changeTheme('DARK');
 
       expect(prefs.theme).toBe('DARK');
@@ -79,7 +77,7 @@ describe('UserPreferences Aggregate', () => {
 
   describe('changeLanguage', () => {
     it('should change language and update updatedAt', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.changeLanguage('en-US');
 
@@ -89,7 +87,7 @@ describe('UserPreferences Aggregate', () => {
 
   describe('updateWindowDimensions', () => {
     it('should update window dimensions', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.updateWindowDimensions(1920, 1080);
 
@@ -97,13 +95,15 @@ describe('UserPreferences Aggregate', () => {
       expect(prefs.windowHeight).toBe(1080);
     });
 
-    it('should throw error for invalid dimensions', () => {
-      const prefs = UserPreferences.createDefaults();
+    it.each([
+      { width: 0, height: 1080, description: 'zero width' },
+      { width: 1920, height: -100, description: 'negative height' },
+      { width: -1, height: 720, description: 'negative width' },
+      { width: 0, height: 0, description: 'both zero' },
+    ])('should throw error for invalid dimensions: $description', ({ width, height }) => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
-      expect(() => prefs.updateWindowDimensions(0, 1080)).toThrow(
-        'Window dimensions must be positive',
-      );
-      expect(() => prefs.updateWindowDimensions(1920, -100)).toThrow(
+      expect(() => prefs.updateWindowDimensions(width, height)).toThrow(
         'Window dimensions must be positive',
       );
     });
@@ -111,7 +111,7 @@ describe('UserPreferences Aggregate', () => {
 
   describe('updateWindowPosition', () => {
     it('should update window position', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.updateWindowPosition(100, 200);
 
@@ -120,7 +120,7 @@ describe('UserPreferences Aggregate', () => {
     });
 
     it('should set position to null', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
       prefs.updateWindowPosition(100, 200);
 
       prefs.updateWindowPosition(null, null);
@@ -132,7 +132,7 @@ describe('UserPreferences Aggregate', () => {
 
   describe('setWindowMaximized', () => {
     it('should set window maximized state', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.setWindowMaximized(true);
 
@@ -142,17 +142,22 @@ describe('UserPreferences Aggregate', () => {
 
   describe('changeAutoSaveInterval', () => {
     it('should change auto save interval', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.changeAutoSaveInterval(60000);
 
       expect(prefs.autoSaveInterval).toBe(60000);
     });
 
-    it('should throw error for interval less than 5000ms', () => {
-      const prefs = UserPreferences.createDefaults();
+    it.each([
+      { interval: 1000, description: 'too low (1000ms)' },
+      { interval: 4999, description: 'just below minimum (4999ms)' },
+      { interval: 0, description: 'zero' },
+      { interval: -1000, description: 'negative' },
+    ])('should throw error for interval less than 5000ms: $description', ({ interval }) => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
-      expect(() => prefs.changeAutoSaveInterval(1000)).toThrow(
+      expect(() => prefs.changeAutoSaveInterval(interval)).toThrow(
         'Auto-save interval must be at least 5000ms',
       );
     });
@@ -160,25 +165,31 @@ describe('UserPreferences Aggregate', () => {
 
   describe('changeMaxHistoryEntries', () => {
     it('should change max history entries', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.changeMaxHistoryEntries(200);
 
       expect(prefs.maxHistoryEntries).toBe(200);
     });
 
-    it('should throw error for entries less than 1', () => {
-      const prefs = UserPreferences.createDefaults();
+    it.each([
+      { entries: 0, description: 'zero entries' },
+      { entries: -1, description: 'negative entries' },
+    ])('should throw error for entries less than 1: $description', ({ entries }) => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
-      expect(() => prefs.changeMaxHistoryEntries(0)).toThrow(
+      expect(() => prefs.changeMaxHistoryEntries(entries)).toThrow(
         'Max history entries must be between 1 and 1000',
       );
     });
 
-    it('should throw error for entries greater than 1000', () => {
-      const prefs = UserPreferences.createDefaults();
+    it.each([
+      { entries: 1001, description: 'just over max (1001)' },
+      { entries: 5000, description: 'way over max (5000)' },
+    ])('should throw error for entries greater than 1000: $description', ({ entries }) => {
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
-      expect(() => prefs.changeMaxHistoryEntries(1001)).toThrow(
+      expect(() => prefs.changeMaxHistoryEntries(entries)).toThrow(
         'Max history entries must be between 1 and 1000',
       );
     });
@@ -186,7 +197,7 @@ describe('UserPreferences Aggregate', () => {
 
   describe('updateLastProjectPath', () => {
     it('should update last project path and set lastOpenDate', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
 
       prefs.updateLastProjectPath('/new/path');
 
@@ -195,7 +206,7 @@ describe('UserPreferences Aggregate', () => {
     });
 
     it('should clear last project path but keep lastOpenDate', () => {
-      const prefs = UserPreferences.createDefaults();
+      const prefs = UserPreferencesFakeBuilder.anEntity().build();
       prefs.updateLastProjectPath('/path');
 
       prefs.updateLastProjectPath(null);
@@ -207,7 +218,7 @@ describe('UserPreferences Aggregate', () => {
 
   describe('toJSON', () => {
     it('should convert to plain object', () => {
-      const prefs = UserPreferences.createDefaults('test-user');
+      const prefs = UserPreferencesFakeBuilder.anEntity().withUserId('test-user').build();
       const json = prefs.toJSON();
 
       expect(json).toHaveProperty('id');

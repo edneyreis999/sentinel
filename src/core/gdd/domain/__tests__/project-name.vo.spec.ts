@@ -44,51 +44,52 @@ describe('ProjectName', () => {
   });
 
   describe('validation errors', () => {
-    it('should throw DomainError when value is empty', () => {
-      expect(() => new ProjectName('')).toThrow(DomainError);
-      expect(() => new ProjectName('')).toThrow('Project name cannot be empty');
+    describe('empty values', () => {
+      it.each([
+        { input: '', description: 'empty string' },
+        { input: '   ', description: 'only whitespace' },
+        { input: '\t\t\t', description: 'only tabs' },
+        { input: '\n\n', description: 'only newlines' },
+        { input: '  \t\n  ', description: 'mixed whitespace' },
+      ])('should throw DomainError when value is $description', ({ input }) => {
+        expect(() => new ProjectName(input)).toThrow(DomainError);
+        expect(() => new ProjectName(input)).toThrow('Project name cannot be empty');
+      });
     });
 
-    it('should throw DomainError when value is only whitespace', () => {
-      expect(() => new ProjectName('   ')).toThrow(DomainError);
-      expect(() => new ProjectName('   ')).toThrow('Project name cannot be empty');
-    });
+    describe('length violations', () => {
+      it.each([
+        { input: 'AB', trimmedInput: 'AB', description: 'too short (2 chars)' },
+        { input: 'A', trimmedInput: 'A', description: 'too short (1 char)' },
+        { input: '  AB  ', trimmedInput: 'AB', description: 'too short after trim' },
+      ])('should throw DomainError when $description', ({ input }) => {
+        expect(() => new ProjectName(input)).toThrow(DomainError);
+        expect(() => new ProjectName(input)).toThrow('at least 3 characters long');
+      });
 
-    it('should throw DomainError when value is only tabs', () => {
-      expect(() => new ProjectName('\t\t\t')).toThrow(DomainError);
-      expect(() => new ProjectName('\t\t\t')).toThrow('Project name cannot be empty');
-    });
-
-    it('should throw DomainError when value is only newlines', () => {
-      expect(() => new ProjectName('\n\n')).toThrow(DomainError);
-      expect(() => new ProjectName('\n\n')).toThrow('Project name cannot be empty');
-    });
-
-    it('should throw DomainError when trimmed length is less than 3', () => {
-      expect(() => new ProjectName('AB')).toThrow(DomainError);
-      expect(() => new ProjectName('AB')).toThrow('at least 3 characters long');
-
-      expect(() => new ProjectName('  AB  ')).toThrow(DomainError);
-      expect(() => new ProjectName('  AB  ')).toThrow('at least 3 characters long');
-    });
-
-    it('should throw DomainError when value exceeds 100 characters', () => {
-      expect(() => new ProjectName('A'.repeat(101))).toThrow(DomainError);
-      expect(() => new ProjectName('A'.repeat(101))).toThrow('cannot exceed 100 characters');
-    });
-
-    it('should throw DomainError when trimmed value exceeds 100 characters', () => {
-      const longName = '  ' + 'A'.repeat(101) + '  ';
-      expect(() => new ProjectName(longName)).toThrow(DomainError);
-      expect(() => new ProjectName(longName)).toThrow('cannot exceed 100 characters');
+      it.each([
+        { input: 'A'.repeat(101), description: 'exceeds 100 characters' },
+        { input: '  ' + 'A'.repeat(101) + '  ', description: 'exceeds 100 after trim' },
+        { input: 'A'.repeat(200), description: 'way over limit' },
+      ])('should throw DomainError when $description', ({ input }) => {
+        expect(() => new ProjectName(input)).toThrow(DomainError);
+        expect(() => new ProjectName(input)).toThrow('cannot exceed 100 characters');
+      });
     });
   });
 
   describe('edge cases', () => {
-    it('should handle names with special characters', () => {
-      const names = ['Project & Co', 'Project: The Beginning', 'Project - 2024', "Project's Name"];
-
-      names.forEach((name) => {
+    describe('special characters', () => {
+      it.each([
+        'Project & Co',
+        'Project: The Beginning',
+        'Project - 2024',
+        "Project's Name",
+        'Project (Part 1)',
+        'Project [Draft]',
+        'Project #1',
+        'Project @Work',
+      ])('should handle name with special characters: %s', (name) => {
         expect(() => new ProjectName(name)).not.toThrow();
         const projectName = new ProjectName(name);
         expect(projectName.getValue()).toBe(name);
@@ -107,10 +108,15 @@ describe('ProjectName', () => {
       expect(name.getValue()).toBe('MiXeD CaSe PrOjEcT');
     });
 
-    it('should handle unicode characters', () => {
-      const names = ['Proyecto Ñoño', 'Projeto 中文', 'Прoject', 'プロジェクト'];
-
-      names.forEach((name) => {
+    describe('unicode characters', () => {
+      it.each([
+        { name: 'Proyecto Ñoño', description: 'Spanish' },
+        { name: 'Projeto 中文', description: 'Chinese' },
+        { name: 'Проект', description: 'Russian' },
+        { name: 'プロジェクト', description: 'Japanese' },
+        { name: 'مشروع', description: 'Arabic' },
+        { name: 'פרויקט', description: 'Hebrew' },
+      ])('should handle $description characters: $name', ({ name }) => {
         expect(() => new ProjectName(name)).not.toThrow();
         const projectName = new ProjectName(name);
         expect(projectName.getValue()).toBe(name);
@@ -123,13 +129,17 @@ describe('ProjectName', () => {
       expect(name.getValue()).toBe('Project 🚀🎉');
     });
 
-    it('should return false when comparing with non-ProjectName', () => {
-      const name = new ProjectName('My Project');
+    describe('equality with non-ProjectName values', () => {
+      it.each([
+        { value: null, description: 'null' },
+        { value: undefined, description: 'undefined' },
+        { value: 'My Project', description: 'string' },
+        { value: { getValue: () => 'My Project' }, description: 'object with getValue' },
+      ])('should return false when comparing with $description', ({ value }) => {
+        const name = new ProjectName('My Project');
 
-      expect(name.equals(null as any)).toBe(false);
-      expect(name.equals(undefined as any)).toBe(false);
-      expect(name.equals('My Project' as any)).toBe(false);
-      expect(name.equals({ getValue: () => 'My Project' } as any)).toBe(false);
+        expect(name.equals(value as any)).toBe(false);
+      });
     });
   });
 
