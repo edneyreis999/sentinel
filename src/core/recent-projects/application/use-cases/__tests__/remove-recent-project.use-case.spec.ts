@@ -2,12 +2,11 @@ import { RemoveRecentProjectUseCase } from '../remove/remove-recent-project.use-
 import { RecentProjectsInMemoryRepository } from '@core/recent-projects/infra/db/in-memory/recent-projects-in-memory.repository';
 import { RecentProjectFakeBuilder } from '@core/recent-projects/domain/recent-project.fake-builder';
 import { DomainError } from '@core/shared/domain/errors';
+import { RemoveRecentProjectInputFakeBuilder } from './_fakes';
 
 // Test constants
 const TEST_REMOVE_PROJECT_PATH = '/projects/to-remove.sentinel';
 const TEST_NONEXISTENT_PROJECT_PATH = '/projects/nonexistent.sentinel';
-const TEST_EMPTY_PATH = '';
-const TEST_WHITESPACE_PATH = '   ';
 const ERROR_NOT_FOUND = 'not found';
 const ERROR_PATH_REQUIRED = 'Project path is required';
 
@@ -27,9 +26,9 @@ describe('RemoveRecentProjectUseCase', () => {
       .build();
     await repository.upsert(project);
 
-    const input = {
-      path: TEST_REMOVE_PROJECT_PATH,
-    };
+    const input = RemoveRecentProjectInputFakeBuilder.create()
+      .withPath(TEST_REMOVE_PROJECT_PATH)
+      .build();
 
     // Act
     await useCase.execute(input);
@@ -41,27 +40,23 @@ describe('RemoveRecentProjectUseCase', () => {
 
   it('should throw DomainError when project not found', async () => {
     // Repository is empty, so project doesn't exist
-    const input = {
-      path: TEST_NONEXISTENT_PROJECT_PATH,
-    };
+    const input = RemoveRecentProjectInputFakeBuilder.create()
+      .withPath(TEST_NONEXISTENT_PROJECT_PATH)
+      .build();
 
     await expect(useCase.execute(input)).rejects.toThrow(DomainError);
     await expect(useCase.execute(input)).rejects.toThrow(ERROR_NOT_FOUND);
   });
 
   it('should throw DomainError for empty path', async () => {
-    const input = {
-      path: TEST_EMPTY_PATH,
-    };
+    const input = RemoveRecentProjectInputFakeBuilder.createWithEmptyPath().build();
 
     await expect(useCase.execute(input)).rejects.toThrow(DomainError);
     await expect(useCase.execute(input)).rejects.toThrow(ERROR_PATH_REQUIRED);
   });
 
   it('should throw DomainError for whitespace-only path', async () => {
-    const input = {
-      path: TEST_WHITESPACE_PATH,
-    };
+    const input = RemoveRecentProjectInputFakeBuilder.createWithWhitespacePath().build();
 
     await expect(useCase.execute(input)).rejects.toThrow(DomainError);
   });

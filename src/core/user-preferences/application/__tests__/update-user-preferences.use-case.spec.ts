@@ -1,17 +1,49 @@
 import { UpdateUserPreferencesUseCase } from '../use-cases/update-user-preferences.use-case';
-import { PubSub } from 'graphql-subscriptions';
 import { UserPreferencesInMemoryRepository } from '@core/user-preferences/infra';
 import { UserPreferences } from '@core/user-preferences/domain';
+
+/**
+ * Fake implementation of PubSub for testing
+ * Avoids using jest.spyOn and provides better test isolation
+ */
+class PubSubFake {
+  public publishedEvents: Array<{ event: string; data: unknown }> = [];
+
+  async publish(event: string, data: unknown): Promise<void> {
+    this.publishedEvents.push({ event, data });
+  }
+
+  /**
+   * Helper method to check if an event was published
+   */
+  wasEventPublished(event: string): boolean {
+    return this.publishedEvents.some((e) => e.event === event);
+  }
+
+  /**
+   * Helper method to get data for a specific event
+   */
+  getEventData(event: string): unknown | undefined {
+    return this.publishedEvents.find((e) => e.event === event)?.data;
+  }
+
+  /**
+   * Reset published events between tests
+   */
+  reset(): void {
+    this.publishedEvents = [];
+  }
+}
 
 describe('UpdateUserPreferencesUseCase', () => {
   let useCase: UpdateUserPreferencesUseCase;
   let repository: UserPreferencesInMemoryRepository;
-  let pubSub: PubSub;
+  let pubSub: PubSubFake;
 
   beforeEach(() => {
     repository = new UserPreferencesInMemoryRepository();
-    pubSub = new PubSub();
-    useCase = new UpdateUserPreferencesUseCase(repository, pubSub);
+    pubSub = new PubSubFake();
+    useCase = new UpdateUserPreferencesUseCase(repository, pubSub as any);
   });
 
   it('should update existing preferences', async () => {
@@ -68,14 +100,13 @@ describe('UpdateUserPreferencesUseCase', () => {
     const prefs = UserPreferences.createDefaults('user-1');
     await repository.save(prefs);
 
-    const spy = jest.spyOn(pubSub, 'publish');
-
     await useCase.execute({
       userId: 'user-1',
       theme: 'DARK',
     });
 
-    expect(spy).toHaveBeenCalledWith('userPreferencesChanged', {
+    expect(pubSub.wasEventPublished('userPreferencesChanged')).toBe(true);
+    expect(pubSub.getEventData('userPreferencesChanged')).toMatchObject({
       userPreferencesChanged: expect.objectContaining({
         userId: 'user-1',
         theme: 'DARK',

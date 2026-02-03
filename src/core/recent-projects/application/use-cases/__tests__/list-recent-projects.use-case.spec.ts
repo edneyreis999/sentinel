@@ -2,6 +2,7 @@ import { ListRecentProjectsUseCase } from '../list/list-recent-projects.use-case
 import { RecentProjectsInMemoryRepository } from '@core/recent-projects/infra/db/in-memory/recent-projects-in-memory.repository';
 import { RecentProjectFakeBuilder } from '@core/recent-projects/domain/recent-project.fake-builder';
 import { DomainError } from '@core/shared/domain/errors';
+import { ListRecentProjectsInputFakeBuilder } from './_fakes';
 
 // Test constants
 const DEFAULT_LIMIT = 10;
@@ -42,7 +43,7 @@ describe('ListRecentProjectsUseCase', () => {
     }
 
     // Act
-    const result = await useCase.execute({});
+    const result = await useCase.execute(ListRecentProjectsInputFakeBuilder.createEmpty().build());
 
     // Assert
     expect(result.items).toHaveLength(SMALL_RESULT_COUNT);
@@ -60,10 +61,12 @@ describe('ListRecentProjectsUseCase', () => {
     }
 
     // Act: Request second page with custom limit
-    const result = await useCase.execute({
-      limit: CUSTOM_LIMIT,
-      offset: CUSTOM_OFFSET,
-    });
+    const result = await useCase.execute(
+      ListRecentProjectsInputFakeBuilder.create()
+        .withLimit(CUSTOM_LIMIT)
+        .withOffset(CUSTOM_OFFSET)
+        .build(),
+    );
 
     // Assert
     expect(result.total).toBe(LARGE_RESULT_COUNT);
@@ -101,9 +104,9 @@ describe('ListRecentProjectsUseCase', () => {
     }
 
     // Act
-    const result = await useCase.execute({
-      nameFilter: TEST_NAME_FILTER,
-    });
+    const result = await useCase.execute(
+      ListRecentProjectsInputFakeBuilder.create().withNameFilter(TEST_NAME_FILTER).build(),
+    );
 
     // Assert: Only Sentinel projects should be returned
     expect(result.items).toHaveLength(2);
@@ -135,9 +138,9 @@ describe('ListRecentProjectsUseCase', () => {
     }
 
     // Act
-    const result = await useCase.execute({
-      gameVersion: TEST_GAME_VERSION,
-    });
+    const result = await useCase.execute(
+      ListRecentProjectsInputFakeBuilder.create().withGameVersion(TEST_GAME_VERSION).build(),
+    );
 
     // Assert: Only v1.0.0 projects should be returned
     expect(result.items).toHaveLength(2);
@@ -146,19 +149,21 @@ describe('ListRecentProjectsUseCase', () => {
   });
 
   it('should throw DomainError for invalid limit', async () => {
-    await expect(useCase.execute({ limit: MIN_LIMIT })).rejects.toThrow(DomainError);
-    await expect(useCase.execute({ limit: MIN_LIMIT })).rejects.toThrow(ERROR_MIN_LIMIT);
+    const input = ListRecentProjectsInputFakeBuilder.createWithInvalidLimit(MIN_LIMIT).build();
+    await expect(useCase.execute(input)).rejects.toThrow(DomainError);
+    await expect(useCase.execute(input)).rejects.toThrow(ERROR_MIN_LIMIT);
   });
 
   it('should throw DomainError for limit exceeding max', async () => {
-    await expect(useCase.execute({ limit: MAX_LIMIT })).rejects.toThrow(DomainError);
-    await expect(useCase.execute({ limit: MAX_LIMIT })).rejects.toThrow(ERROR_MAX_LIMIT);
+    const input = ListRecentProjectsInputFakeBuilder.createWithInvalidLimit(MAX_LIMIT).build();
+    await expect(useCase.execute(input)).rejects.toThrow(DomainError);
+    await expect(useCase.execute(input)).rejects.toThrow(ERROR_MAX_LIMIT);
   });
 
   it('should throw DomainError for negative offset', async () => {
-    await expect(useCase.execute({ offset: NEGATIVE_OFFSET })).rejects.toThrow(DomainError);
-    await expect(useCase.execute({ offset: NEGATIVE_OFFSET })).rejects.toThrow(
-      ERROR_NEGATIVE_OFFSET,
-    );
+    const input =
+      ListRecentProjectsInputFakeBuilder.createWithInvalidOffset(NEGATIVE_OFFSET).build();
+    await expect(useCase.execute(input)).rejects.toThrow(DomainError);
+    await expect(useCase.execute(input)).rejects.toThrow(ERROR_NEGATIVE_OFFSET);
   });
 });

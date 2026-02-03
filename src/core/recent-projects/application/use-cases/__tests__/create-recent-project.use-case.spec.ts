@@ -1,6 +1,7 @@
 import { CreateRecentProjectUseCase } from '../create/create-recent-project.use-case';
 import { RecentProjectsInMemoryRepository } from '@core/recent-projects/infra/db/in-memory/recent-projects-in-memory.repository';
 import { RecentProjectFakeBuilder } from '@core/recent-projects/domain/recent-project.fake-builder';
+import { CreateRecentProjectInputFakeBuilder } from './_fakes';
 
 // Test constants
 const TEST_NEW_PROJECT_PATH = '/projects/new.sentinel';
@@ -27,13 +28,13 @@ describe('CreateRecentProjectUseCase', () => {
   });
 
   it('should create a new project when path does not exist', async () => {
-    const input = {
-      path: TEST_NEW_PROJECT_PATH,
-      name: TEST_NEW_PROJECT_NAME,
-      gameVersion: TEST_NEW_PROJECT_VERSION,
-      screenshotPath: TEST_SCREENSHOT_PATH,
-      trechoCount: TEST_TRECHO_COUNT,
-    };
+    const input = CreateRecentProjectInputFakeBuilder.create()
+      .withPath(TEST_NEW_PROJECT_PATH)
+      .withName(TEST_NEW_PROJECT_NAME)
+      .withGameVersion(TEST_NEW_PROJECT_VERSION)
+      .withScreenshotPath(TEST_SCREENSHOT_PATH)
+      .withTrechoCount(TEST_TRECHO_COUNT)
+      .build();
 
     const result = await useCase.execute(input);
 
@@ -61,11 +62,11 @@ describe('CreateRecentProjectUseCase', () => {
     // Pre-populate repository with existing project
     await repository.upsert(existingProject);
 
-    const input = {
-      path: TEST_EXISTING_PROJECT_PATH,
-      name: TEST_UPDATED_PROJECT_NAME,
-      gameVersion: TEST_UPDATED_PROJECT_VERSION,
-    };
+    const input = CreateRecentProjectInputFakeBuilder.create()
+      .withPath(TEST_EXISTING_PROJECT_PATH)
+      .withName(TEST_UPDATED_PROJECT_NAME)
+      .withGameVersion(TEST_UPDATED_PROJECT_VERSION)
+      .build();
 
     const result = await useCase.execute(input);
 
@@ -79,10 +80,10 @@ describe('CreateRecentProjectUseCase', () => {
   });
 
   it('should create project with only required fields', async () => {
-    const input = {
-      path: TEST_MINIMAL_PROJECT_PATH,
-      name: TEST_MINIMAL_PROJECT_NAME,
-    };
+    const input = CreateRecentProjectInputFakeBuilder.createMinimal()
+      .withPath(TEST_MINIMAL_PROJECT_PATH)
+      .withName(TEST_MINIMAL_PROJECT_NAME)
+      .build();
 
     const result = await useCase.execute(input);
 

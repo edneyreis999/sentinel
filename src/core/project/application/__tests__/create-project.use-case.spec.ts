@@ -164,47 +164,38 @@ describe('CreateProjectUseCase', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle project names with special characters', async () => {
+    it.each([
+      {
+        testCase: 'project names with special characters',
+        name: 'Project with émojis 🎮 and spëcial çhars',
+        path: '/special/chars/path',
+        expectedName: 'Project with émojis 🎮 and spëcial çhars',
+        expectedPath: '/special/chars/path',
+      },
+      {
+        testCase: 'long project paths',
+        name: 'Deep Path Project',
+        path: '/very/long/path/that/goes/deep/into/the/directory/structure/and/continues',
+        expectedName: 'Deep Path Project',
+        expectedPath: '/very/long/path/that/goes/deep/into/the/directory/structure/and/continues',
+      },
+      {
+        testCase: 'project names at minimum length (3 chars)',
+        name: 'ABC',
+        path: '/abc/path',
+        expectedName: 'ABC',
+        expectedPath: '/abc/path',
+      },
+    ])('should handle $testCase', async ({ name, path, expectedName, expectedPath }) => {
       // Arrange
-      const input = CreateProjectInputFakeBuilder.create()
-        .withName('Project with émojis 🎮 and spëcial çhars')
-        .withPath('/special/chars/path')
-        .build();
+      const input = CreateProjectInputFakeBuilder.create().withName(name).withPath(path).build();
 
       // Act
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.name).toBe('Project with émojis 🎮 and spëcial çhars');
-    });
-
-    it('should handle long project paths', async () => {
-      // Arrange
-      const longPath = '/very/long/path/that/goes/deep/into/the/directory/structure/and/continues';
-      const input = CreateProjectInputFakeBuilder.create()
-        .withName('Deep Path Project')
-        .withPath(longPath)
-        .build();
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.path).toBe(longPath);
-    });
-
-    it('should handle project names at minimum length (3 chars)', async () => {
-      // Arrange
-      const input = CreateProjectInputFakeBuilder.create()
-        .withName('ABC')
-        .withPath('/abc/path')
-        .build();
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.name).toBe('ABC');
+      expect(result.name).toBe(expectedName);
+      expect(result.path).toBe(expectedPath);
     });
   });
 });
