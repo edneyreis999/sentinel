@@ -39,4 +39,4 @@ import { InternalHelper } from '../helpers/internal.helper';
 
 Sempre que possível, invoque agentes para executar em paralelo
 
-`coreto-test-agent` responsavel por escrever TODOS os testes do sistema.
+`test-orchestrator` responsavel por escrever TODOS os testes do sistema.
