@@ -1,0 +1,51 @@
+# Git
+.git
+.github
+.gitignore
+
+# Node
+node_modules
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist
+build
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Testing
+coverage
+test
+*.spec.ts
+*.e2e-spec.ts
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Development
+.serena
+planos
+data
+*.db
+*.db-journal
