@@ -2,12 +2,145 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type HealthStatus {
+  """The current health status of the application"""
+  status: HealthStatusEnum!
+
+  """The current timestamp"""
+  timestamp: DateTime!
+
+  """The uptime of the application in seconds"""
+  uptime: Float!
+
+  """The version of the application"""
+  version: String!
+}
+
+"""The health status of the application"""
+enum HealthStatusEnum {
+  DEGRADED
+  HEALTHY
+  UNHEALTHY
+}
+
 type Mutation {
+  addRecentProject(gameVersion: String, name: String!, path: String!, screenshotPath: String, trechoCount: Int): RecentProject!
+
+  """Create a new simulation history entry"""
+  createSimulationHistoryEntry(battleCount: Float!, configJson: String!, durationMs: Float!, hasReport: Boolean = false, projectName: String!, projectPath: String!, reportFilePath: String, status: String = "PENDING", summaryJson: String, trechoCount: Float!, ttkVersion: String!): SimulationHistoryEntryGraphQL!
+
+  """Delete a simulation history entry"""
+  deleteSimulationHistory(id: String!): Boolean!
+
   """Echoes back the provided message"""
   echo(message: String!): String!
+  removeRecentProject(path: String!): SuccessResponse!
+
+  """Update simulation status with state machine validation"""
+  updateSimulationStatus(id: String!, status: String!, summaryJson: String): SimulationHistoryEntryGraphQL!
+
+  """Update user preferences"""
+  updateUserPreferences(autoSaveInterval: Float, language: String, lastProjectPath: String, maxHistoryEntries: Float, theme: ThemeMode, windowHeight: Float, windowIsMaximized: Boolean, windowWidth: Float, windowX: Float, windowY: Float): UserPreferencesGraphQL!
+}
+
+type PaginatedMeta {
+  lastPage: Float!
+  page: Float!
+  perPage: Float!
+  total: Float!
+}
+
+type PaginatedRecentProjects {
+  data: [RecentProject!]!
+  meta: PaginatedMeta!
 }
 
 type Query {
+  """Returns the current health status of the application"""
+  health: HealthStatus!
+
   """Returns a greeting from the Sentinel API"""
   hello: String!
+  recentProjects(gameVersion: String, limit: Int = 10, nameFilter: String, offset: Int = 0): PaginatedRecentProjects!
+
+  """List simulation history entries with optional filters and pagination"""
+  simulationHistory(dateFrom: DateTime, dateTo: DateTime, page: Float = 1, perPage: Float = 20, projectPath: String, status: String, ttkVersion: String): [SimulationHistoryEntryGraphQL!]!
+
+  """Get a single simulation history entry by ID"""
+  simulationHistoryEntry(id: String!): SimulationHistoryEntryGraphQL
+
+  """Get user preferences with lazy initialization of defaults"""
+  userPreferences: UserPreferencesGraphQL!
+}
+
+type RecentProject {
+  createdAt: DateTime!
+  gameVersion: String
+  id: ID!
+  lastOpenedAt: DateTime!
+  name: String!
+  path: String!
+  screenshotPath: String
+  trechoCount: Int
+  updatedAt: DateTime!
+}
+
+type SimulationHistoryEntryGraphQL {
+  battleCount: Float!
+  configJson: String!
+  createdAt: DateTime!
+  durationMs: Float!
+  hasReport: Boolean!
+  id: String!
+  projectName: String!
+  projectPath: String!
+  reportFilePath: String
+  status: String!
+  summaryJson: String
+  timestamp: DateTime!
+  trechoCount: Float!
+  ttkVersion: String!
+  updatedAt: DateTime!
+}
+
+type Subscription {
+  simulationHistoryChanged: SimulationHistoryEntryGraphQL!
+  simulationStatusChanged(simulationId: String): SimulationHistoryEntryGraphQL!
+
+  """Subscribe to user preferences changes"""
+  userPreferencesChanged: UserPreferencesGraphQL!
+}
+
+type SuccessResponse {
+  success: Boolean!
+}
+
+"""Theme mode for user interface"""
+enum ThemeMode {
+  DARK
+  LIGHT
+  SYSTEM
+}
+
+type UserPreferencesGraphQL {
+  autoSaveInterval: Int!
+  createdAt: DateTime!
+  id: ID!
+  language: String!
+  lastOpenDate: DateTime
+  lastProjectPath: String
+  maxHistoryEntries: Int!
+  theme: ThemeMode!
+  updatedAt: DateTime!
+  userId: String!
+  windowHeight: Int!
+  windowIsMaximized: Boolean!
+  windowWidth: Int!
+  windowX: Int
+  windowY: Int
 }
