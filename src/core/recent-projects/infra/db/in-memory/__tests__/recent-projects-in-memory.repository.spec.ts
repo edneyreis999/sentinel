@@ -1,6 +1,10 @@
 import { RecentProjectsInMemoryRepository } from '../recent-projects-in-memory.repository';
 import { RecentProjectFakeBuilder } from '@core/recent-projects/domain/recent-project.fake-builder';
 
+// Test constants
+const SAMPLE_PROJECT_NAME_PATTERN = 'Project 1';
+const SAMPLE_GAME_VERSION = '1.0.0';
+
 describe('RecentProjectsInMemoryRepository', () => {
   let repository: RecentProjectsInMemoryRepository;
 
@@ -162,25 +166,25 @@ describe('RecentProjectsInMemoryRepository', () => {
       const result = await repository.search({
         limit: 10,
         offset: 0,
-        nameFilter: 'Project 1',
+        nameFilter: SAMPLE_PROJECT_NAME_PATTERN,
       });
 
       expect(result.items.length).toBeGreaterThan(0);
-      result.items.forEach((item: any) => {
-        expect(item.name.toLowerCase()).toContain('project 1');
-      });
+      const names = result.items.map((item: any) => item.name.toLowerCase());
+      expect(names.every((name) => name.includes(SAMPLE_PROJECT_NAME_PATTERN.toLowerCase()))).toBe(
+        true,
+      );
     });
 
     it('should filter by game version', async () => {
       const result = await repository.search({
         limit: 10,
         offset: 0,
-        gameVersion: '1.0.0',
+        gameVersion: SAMPLE_GAME_VERSION,
       });
 
-      result.items.forEach((item: any) => {
-        expect(item.gameVersion).toBe('1.0.0');
-      });
+      const versions = result.items.map((item: any) => item.gameVersion);
+      expect(versions.every((version) => version === SAMPLE_GAME_VERSION)).toBe(true);
     });
 
     it('should sort by lastOpenedAt descending', async () => {
@@ -246,7 +250,7 @@ describe('RecentProjectsInMemoryRepository', () => {
 
     it('should count with name filter', async () => {
       const count = await repository.count({
-        nameFilter: 'Project 1',
+        nameFilter: SAMPLE_PROJECT_NAME_PATTERN,
       });
 
       expect(count).toBeGreaterThan(0);

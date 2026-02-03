@@ -13,6 +13,10 @@ const TEST_DELAYS = {
   UPTIME_CHECK_MS: 100,
 } as const;
 
+/**
+ * Acceptable delta for uptime measurements in seconds.
+ * Allows for 1 second variance due to test execution time and system clock precision.
+ */
 const ACCEPTABLE_UPTIME_DELTA_SECONDS = 1;
 
 describe('Health E2E Tests', () => {
@@ -49,15 +53,14 @@ describe('Health E2E Tests', () => {
         .expect(200)
         .expect('Content-Type', /json/);
 
-      expect(response.body).toHaveProperty('status');
-      expect(response.body).toHaveProperty('version');
-      expect(response.body).toHaveProperty('uptime');
-      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body).toMatchObject({
+        status: expect.any(String),
+        version: expect.any(String),
+        uptime: expect.any(Number),
+        timestamp: expect.any(String),
+      });
 
       expect(Object.values(HealthStatusEnum).includes(response.body.status)).toBeTruthy();
-      expect(typeof response.body.version).toBe('string');
-      expect(typeof response.body.uptime).toBe('number');
-      expect(typeof response.body.timestamp).toBe('string');
     });
 
     it('should return consistent health data on multiple calls', async () => {
@@ -96,18 +99,16 @@ describe('Health E2E Tests', () => {
         .expect(200);
 
       expect(response.body.data).toBeDefined();
-      expect(response.body.data.health).toBeDefined();
-      expect(response.body.data.health.status).toBeDefined();
-      expect(response.body.data.health.version).toBeDefined();
-      expect(response.body.data.health.uptime).toBeDefined();
-      expect(response.body.data.health.timestamp).toBeDefined();
+      expect(response.body.data.health).toMatchObject({
+        status: expect.any(String),
+        version: expect.any(String),
+        uptime: expect.any(Number),
+        timestamp: expect.any(String),
+      });
 
       expect(
         Object.values(HealthStatusEnum).includes(response.body.data.health.status),
       ).toBeTruthy();
-      expect(typeof response.body.data.health.version).toBe('string');
-      expect(typeof response.body.data.health.uptime).toBe('number');
-      expect(typeof response.body.data.health.timestamp).toBe('string');
     });
 
     it('should return consistent data via GraphQL and REST', async () => {

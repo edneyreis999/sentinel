@@ -2,6 +2,15 @@ import { MemoryHealthIndicator } from '../indicators/memory-health.indicator';
 import { HealthStatusEnum } from '../types/health-status.types';
 import * as os from 'os';
 
+// Test constants for memory usage scenarios
+const MEMORY_USAGE_SCENARIOS = {
+  HEALTHY: { percent: 0.5, expectedStatus: HealthStatusEnum.HEALTHY },
+  DEGRADED: { percent: 0.85, expectedStatus: HealthStatusEnum.DEGRADED },
+  UNHEALTHY: { percent: 0.96, expectedStatus: HealthStatusEnum.UNHEALTHY },
+  THRESHOLD_80: { percent: 0.8, expectedStatus: HealthStatusEnum.DEGRADED },
+  THRESHOLD_95: { percent: 0.95, expectedStatus: HealthStatusEnum.UNHEALTHY },
+} as const;
+
 describe('MemoryHealthIndicator', () => {
   let indicator: MemoryHealthIndicator;
 
@@ -11,99 +20,97 @@ describe('MemoryHealthIndicator', () => {
 
   describe('checkMemoryStatus', () => {
     it('should return HEALTHY when memory usage is below 80%', () => {
-      // Mock to simulate low memory usage
       const totalMem = os.totalmem();
-      const lowUsage = totalMem * 0.5; // 50% usage
+      const usage = totalMem * MEMORY_USAGE_SCENARIOS.HEALTHY.percent;
 
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        rss: lowUsage,
-        heapTotal: lowUsage,
-        heapUsed: lowUsage * 0.8,
+        rss: usage,
+        heapTotal: usage,
+        heapUsed: usage * 0.8,
         external: 0,
         arrayBuffers: 0,
       });
 
       const status = indicator.checkMemoryStatus();
 
-      expect(status).toBe(HealthStatusEnum.HEALTHY);
+      expect(status).toBe(MEMORY_USAGE_SCENARIOS.HEALTHY.expectedStatus);
     });
 
     it('should return DEGRADED when memory usage is between 80% and 95%', () => {
       const totalMem = os.totalmem();
-      const degradedUsage = totalMem * 0.85; // 85% usage
+      const usage = totalMem * MEMORY_USAGE_SCENARIOS.DEGRADED.percent;
 
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        rss: degradedUsage,
-        heapTotal: degradedUsage,
-        heapUsed: degradedUsage * 0.8,
+        rss: usage,
+        heapTotal: usage,
+        heapUsed: usage * 0.8,
         external: 0,
         arrayBuffers: 0,
       });
 
       const status = indicator.checkMemoryStatus();
 
-      expect(status).toBe(HealthStatusEnum.DEGRADED);
+      expect(status).toBe(MEMORY_USAGE_SCENARIOS.DEGRADED.expectedStatus);
     });
 
     it('should return UNHEALTHY when memory usage is 95% or above', () => {
       const totalMem = os.totalmem();
-      const unhealthyUsage = totalMem * 0.96; // 96% usage
+      const usage = totalMem * MEMORY_USAGE_SCENARIOS.UNHEALTHY.percent;
 
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        rss: unhealthyUsage,
-        heapTotal: unhealthyUsage,
-        heapUsed: unhealthyUsage * 0.8,
+        rss: usage,
+        heapTotal: usage,
+        heapUsed: usage * 0.8,
         external: 0,
         arrayBuffers: 0,
       });
 
       const status = indicator.checkMemoryStatus();
 
-      expect(status).toBe(HealthStatusEnum.UNHEALTHY);
+      expect(status).toBe(MEMORY_USAGE_SCENARIOS.UNHEALTHY.expectedStatus);
     });
 
     it('should return DEGRADED exactly at 80% threshold', () => {
       const totalMem = os.totalmem();
-      const thresholdUsage = totalMem * 0.8;
+      const usage = totalMem * MEMORY_USAGE_SCENARIOS.THRESHOLD_80.percent;
 
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        rss: thresholdUsage,
-        heapTotal: thresholdUsage,
-        heapUsed: thresholdUsage * 0.8,
+        rss: usage,
+        heapTotal: usage,
+        heapUsed: usage * 0.8,
         external: 0,
         arrayBuffers: 0,
       });
 
       const status = indicator.checkMemoryStatus();
 
-      expect(status).toBe(HealthStatusEnum.DEGRADED);
+      expect(status).toBe(MEMORY_USAGE_SCENARIOS.THRESHOLD_80.expectedStatus);
     });
 
     it('should return UNHEALTHY exactly at 95% threshold', () => {
-      // Mock totalmem to ensure consistent calculation
-      const totalMem = 16_000_000_000; // 16GB fixed value
+      const totalMem = 16_000_000_000; // 16GB fixed value for consistent calculation
       jest.spyOn(os, 'totalmem').mockReturnValue(totalMem);
 
-      const thresholdUsage = totalMem * 0.95;
+      const usage = totalMem * MEMORY_USAGE_SCENARIOS.THRESHOLD_95.percent;
 
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
-        rss: thresholdUsage,
-        heapTotal: thresholdUsage,
-        heapUsed: thresholdUsage * 0.8,
+        rss: usage,
+        heapTotal: usage,
+        heapUsed: usage * 0.8,
         external: 0,
         arrayBuffers: 0,
       });
 
       const status = indicator.checkMemoryStatus();
 
-      expect(status).toBe(HealthStatusEnum.UNHEALTHY);
+      expect(status).toBe(MEMORY_USAGE_SCENARIOS.THRESHOLD_95.expectedStatus);
     });
   });
 
   describe('getMemoryUsagePercent', () => {
     it('should return memory usage as percentage', () => {
       const totalMem = os.totalmem();
-      const currentUsage = totalMem * 0.5; // 50% usage
+      const currentUsage = totalMem * MEMORY_USAGE_SCENARIOS.HEALTHY.percent;
 
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
         rss: currentUsage,
@@ -115,7 +122,7 @@ describe('MemoryHealthIndicator', () => {
 
       const percent = indicator.getMemoryUsagePercent();
 
-      expect(percent).toBeCloseTo(50, 1);
+      expect(percent).toBeCloseTo(MEMORY_USAGE_SCENARIOS.HEALTHY.percent * 100, 1);
     });
 
     it('should return a value between 0 and 100', () => {

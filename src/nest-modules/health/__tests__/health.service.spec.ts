@@ -2,34 +2,30 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HealthService } from '../health.service';
 import { MemoryHealthIndicator } from '../indicators/memory-health.indicator';
 import { HealthStatusEnum } from '../types/health-status.types';
+import { FakeMemoryHealthIndicator } from './fakes/fake-memory-health.indicator';
 
 describe('HealthService', () => {
   let service: HealthService;
-  let memoryIndicator: jest.Mocked<MemoryHealthIndicator>;
+  let memoryIndicator: FakeMemoryHealthIndicator;
 
   beforeEach(async () => {
-    // Create mock for MemoryHealthIndicator
-    const mockMemoryIndicator = {
-      checkMemoryStatus: jest.fn(),
-      getMemoryUsagePercent: jest.fn(),
-    };
+    memoryIndicator = new FakeMemoryHealthIndicator();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HealthService,
         {
           provide: MemoryHealthIndicator,
-          useValue: mockMemoryIndicator,
+          useValue: memoryIndicator,
         },
       ],
     }).compile();
 
     service = module.get<HealthService>(HealthService);
-    memoryIndicator = module.get(MemoryHealthIndicator);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    memoryIndicator.reset();
   });
 
   it('should be defined', () => {
@@ -38,18 +34,20 @@ describe('HealthService', () => {
 
   describe('getStatus', () => {
     it('should return health status with all required fields', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+      memoryIndicator.forceStatus(HealthStatusEnum.HEALTHY);
 
       const result = service.getStatus();
 
-      expect(result).toHaveProperty('status');
-      expect(result).toHaveProperty('version');
-      expect(result).toHaveProperty('uptime');
-      expect(result).toHaveProperty('timestamp');
+      expect(result).toMatchObject({
+        status: expect.any(String),
+        version: expect.any(String),
+        uptime: expect.any(Number),
+        timestamp: expect.any(Date),
+      });
     });
 
     it('should return a valid version string', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+      memoryIndicator.forceStatus(HealthStatusEnum.HEALTHY);
 
       const result = service.getStatus();
 
@@ -59,7 +57,7 @@ describe('HealthService', () => {
     });
 
     it('should return uptime as a positive number', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+      memoryIndicator.forceStatus(HealthStatusEnum.HEALTHY);
 
       const result = service.getStatus();
 
@@ -69,7 +67,7 @@ describe('HealthService', () => {
     });
 
     it('should return a valid timestamp', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+      memoryIndicator.forceStatus(HealthStatusEnum.HEALTHY);
 
       const result = service.getStatus();
       const now = new Date();
@@ -79,35 +77,19 @@ describe('HealthService', () => {
       expect(result.timestamp.getTime()).toBeGreaterThan(now.getTime() - 1000);
     });
 
-    it('should return HEALTHY status from memory indicator', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+    it.each([HealthStatusEnum.HEALTHY, HealthStatusEnum.DEGRADED, HealthStatusEnum.UNHEALTHY])(
+      'should propagate %s status from memory indicator',
+      (status) => {
+        memoryIndicator.forceStatus(status);
 
-      const result = service.getStatus();
+        const result = service.getStatus();
 
-      expect(result.status).toBe(HealthStatusEnum.HEALTHY);
-      expect(memoryIndicator.checkMemoryStatus).toHaveBeenCalled();
-    });
-
-    it('should return DEGRADED status from memory indicator', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.DEGRADED);
-
-      const result = service.getStatus();
-
-      expect(result.status).toBe(HealthStatusEnum.DEGRADED);
-      expect(memoryIndicator.checkMemoryStatus).toHaveBeenCalled();
-    });
-
-    it('should return UNHEALTHY status from memory indicator', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.UNHEALTHY);
-
-      const result = service.getStatus();
-
-      expect(result.status).toBe(HealthStatusEnum.UNHEALTHY);
-      expect(memoryIndicator.checkMemoryStatus).toHaveBeenCalled();
-    });
+        expect(result.status).toBe(status);
+      },
+    );
 
     it('should return consistent version across multiple calls', () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+      memoryIndicator.forceStatus(HealthStatusEnum.HEALTHY);
 
       const result1 = service.getStatus();
       const result2 = service.getStatus();
@@ -116,7 +98,7 @@ describe('HealthService', () => {
     });
 
     it('should return increasing uptime', async () => {
-      memoryIndicator.checkMemoryStatus.mockReturnValue(HealthStatusEnum.HEALTHY);
+      memoryIndicator.forceStatus(HealthStatusEnum.HEALTHY);
 
       const result1 = service.getStatus();
       await new Promise((resolve) => setTimeout(resolve, 100));
