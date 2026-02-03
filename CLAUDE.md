@@ -24,6 +24,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Essential Commands
 
+## Path Alias Best Practices (2026)
+
+// EVITAR - Import profundo com sufixo
+import { PrismaService } from '@database/prisma.service';
+
+// RECOMENDADO - Import via barrel do móduloß
+import { PrismaService } from '@database';
+
+// ACEITÁVEL - Import relativo apenas para módulos internos
+import { InternalHelper } from '../helpers/internal.helper';
+
 ## Agentes e responsabilidades
 
 Sempre que possível, invoque agentes para executar em paralelo
