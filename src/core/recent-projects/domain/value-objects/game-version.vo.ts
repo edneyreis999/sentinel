@@ -16,9 +16,11 @@ export class GameVersion {
     this.value = value;
   }
 
-  static create(value: string | null): GameVersion | null {
+  static create(value: string | null): GameVersion {
     if (value === null || value === undefined || value === '') {
-      return null;
+      throw new DomainError(
+        'Game version cannot be null or empty. Expected semantic versioning format (e.g., "1.0.0").',
+      );
     }
 
     const trimmed = value.trim();

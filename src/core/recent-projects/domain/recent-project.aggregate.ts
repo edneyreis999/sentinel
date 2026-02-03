@@ -50,7 +50,7 @@ export class RecentProject {
     this._id = props.id;
     this._path = RecentProjectPath.create(props.path);
     this._name = RecentProjectName.create(props.name);
-    this._gameVersion = GameVersion.create(props.gameVersion);
+    this._gameVersion = props.gameVersion ? GameVersion.create(props.gameVersion) : null;
     this._screenshotPath = props.screenshotPath ?? null;
     this._trechoCount = props.trechoCount ?? null;
     this._createdAt = props.createdAt;

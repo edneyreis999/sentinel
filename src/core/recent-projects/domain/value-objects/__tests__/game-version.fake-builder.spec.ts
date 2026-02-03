@@ -96,10 +96,11 @@ describe('GameVersionFakeBuilder', () => {
   });
 
   describe('invalid values for testing validation', () => {
-    it('withEmptyValue should return null when built', () => {
-      const version = GameVersionFakeBuilder.aGameVersion().withEmptyValue().build();
+    it('withEmptyValue should throw DomainError when built', () => {
+      const builder = GameVersionFakeBuilder.aGameVersion().withEmptyValue();
 
-      expect(version).toBeNull();
+      expect(() => builder.build()).toThrow(DomainError);
+      expect(() => builder.build()).toThrow('cannot be null or empty');
     });
 
     it('withInvalidFormat should throw DomainError when built', () => {

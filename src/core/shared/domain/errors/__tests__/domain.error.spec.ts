@@ -55,27 +55,27 @@ describe('DomainError', () => {
     });
   });
 
-  describe('typical domain error scenarios', () => {
+  describe('domain model violations', () => {
     it.each([
       {
         message: 'Account balance cannot be negative',
         contains: 'cannot',
-        scenario: 'business rule violations',
+        scenario: 'business rule violation (invariant protection)',
       },
       {
         message: 'Email address is invalid',
         contains: 'invalid',
-        scenario: 'validation failures',
+        scenario: 'value object validation failure',
       },
       {
         message: 'Category name must be unique',
         contains: 'must be',
-        scenario: 'invariant violations',
+        scenario: 'aggregate uniqueness constraint violation',
       },
       {
         message: 'Cannot delete published document',
         contains: 'Cannot',
-        scenario: 'state transition violations',
+        scenario: 'aggregate state transition rule violation',
       },
     ])('should represent $scenario', ({ message, contains }) => {
       const error = new DomainError(message);

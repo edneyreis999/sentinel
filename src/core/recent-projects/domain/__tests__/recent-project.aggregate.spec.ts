@@ -2,6 +2,8 @@ import { RecentProject } from '../recent-project.aggregate';
 import { RecentProjectFakeBuilder } from '../recent-project.fake-builder';
 import { DomainError } from '@core/shared/domain/errors';
 
+const TIME_TOLERANCE_MS = 100;
+
 describe('RecentProject Aggregate', () => {
   describe('creation', () => {
     it('should create a valid project with all fields', () => {
@@ -104,9 +106,15 @@ describe('RecentProject Aggregate', () => {
         .withLastOpenedAt(new Date('2024-01-01'))
         .build();
 
+      const beforeUpdate = Date.now();
       const updated = project.updateLastOpened();
+      const afterUpdate = Date.now();
 
       expect(updated.lastOpenedAt.getTime()).toBeGreaterThan(project.lastOpenedAt.getTime());
+      expect(updated.lastOpenedAt.getTime()).toBeGreaterThanOrEqual(
+        beforeUpdate - TIME_TOLERANCE_MS,
+      );
+      expect(updated.lastOpenedAt.getTime()).toBeLessThanOrEqual(afterUpdate + TIME_TOLERANCE_MS);
       expect(updated.path).toBe(project.path);
       expect(updated.name).toBe(project.name);
     });
@@ -114,18 +122,18 @@ describe('RecentProject Aggregate', () => {
     it('should update metadata', () => {
       const project = RecentProjectFakeBuilder.aRecentProject().build();
 
-      // Wait a bit to ensure timestamp difference
-      const startTime = Date.now();
-
+      const beforeUpdate = Date.now();
       const updated = project.updateMetadata({
         name: 'Updated Name',
         gameVersion: '2.0.0',
       });
+      const afterUpdate = Date.now();
 
       expect(updated.name).toBe('Updated Name');
       expect(updated.gameVersion).toBe('2.0.0');
       expect(updated.path).toBe(project.path);
-      expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(startTime);
+      expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate - TIME_TOLERANCE_MS);
+      expect(updated.updatedAt.getTime()).toBeLessThanOrEqual(afterUpdate + TIME_TOLERANCE_MS);
     });
 
     it('should update trecho count', () => {

@@ -5,6 +5,8 @@ import { GddPath } from '../value-objects/gdd-path.vo';
 import { ProjectFakeBuilder } from './project.fake-builder';
 import { DomainError } from '../../../shared/domain/errors/domain.error';
 
+const TIMESTAMP_TEST_DELAY_MS = 10;
+
 describe('Project Entity', () => {
   describe('instantiation', () => {
     it('should create a valid project with all properties', () => {
@@ -121,7 +123,7 @@ describe('Project Entity', () => {
         expect(project.name.toString()).toBe('Renamed Project');
         expect(project.updatedAt.getTime()).toBeGreaterThan(startTime.getTime());
         expect(project.updatedAt.getTime()).toBeLessThanOrEqual(endTime.getTime());
-      }, 10);
+      }, TIMESTAMP_TEST_DELAY_MS);
     });
 
     it('should throw DomainError when renaming archived project', () => {

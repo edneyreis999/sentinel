@@ -59,21 +59,42 @@ describe('ProjectName', () => {
 
     describe('length violations', () => {
       it.each([
-        { input: 'AB', trimmedInput: 'AB', description: 'too short (2 chars)' },
-        { input: 'A', trimmedInput: 'A', description: 'too short (1 char)' },
-        { input: '  AB  ', trimmedInput: 'AB', description: 'too short after trim' },
-      ])('should throw DomainError when $description', ({ input }) => {
+        {
+          input: 'AB',
+          trimmedInput: 'AB',
+          description: 'too short (2 chars)',
+          expectedMessage: 'at least 3 characters long',
+        },
+        {
+          input: 'A',
+          trimmedInput: 'A',
+          description: 'too short (1 char)',
+          expectedMessage: 'at least 3 characters long',
+        },
+        {
+          input: '  AB  ',
+          trimmedInput: 'AB',
+          description: 'too short after trim',
+          expectedMessage: 'at least 3 characters long',
+        },
+        {
+          input: 'A'.repeat(101),
+          description: 'exceeds 100 characters',
+          expectedMessage: 'cannot exceed 100 characters',
+        },
+        {
+          input: '  ' + 'A'.repeat(101) + '  ',
+          description: 'exceeds 100 after trim',
+          expectedMessage: 'cannot exceed 100 characters',
+        },
+        {
+          input: 'A'.repeat(200),
+          description: 'way over limit',
+          expectedMessage: 'cannot exceed 100 characters',
+        },
+      ])('should throw DomainError when $description', ({ input, expectedMessage }) => {
         expect(() => new ProjectName(input)).toThrow(DomainError);
-        expect(() => new ProjectName(input)).toThrow('at least 3 characters long');
-      });
-
-      it.each([
-        { input: 'A'.repeat(101), description: 'exceeds 100 characters' },
-        { input: '  ' + 'A'.repeat(101) + '  ', description: 'exceeds 100 after trim' },
-        { input: 'A'.repeat(200), description: 'way over limit' },
-      ])('should throw DomainError when $description', ({ input }) => {
-        expect(() => new ProjectName(input)).toThrow(DomainError);
-        expect(() => new ProjectName(input)).toThrow('cannot exceed 100 characters');
+        expect(() => new ProjectName(input)).toThrow(expectedMessage);
       });
     });
   });
