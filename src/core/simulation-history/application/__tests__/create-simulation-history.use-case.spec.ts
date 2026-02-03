@@ -1,56 +1,64 @@
 import { CreateSimulationHistoryUseCase } from '../use-cases/create-simulation-history.use-case';
-import { ISimulationHistoryRepository } from '../../domain/ports';
+import { SimulationHistoryInMemoryRepository } from '../../infra/db/in-memory/simulation-history-in-memory.repository';
 import { SimulationStatus } from '../../domain/value-objects';
+import { CreateSimulationHistoryInputFakeBuilder } from './_fakes/create-simulation-history-input.fake-builder';
 
+/**
+ * CreateSimulationHistoryUseCase Tests
+ *
+ * Uses real in-memory repository instead of mocks to:
+ * - Test actual persistence behavior
+ * - Avoid over-mocking (previously mocked 6 methods when only insert was used)
+ * - Enable future validation of persisted data
+ *
+ * Reference: get-user-preferences.use-case.spec.ts
+ */
 describe('CreateSimulationHistoryUseCase', () => {
   let useCase: CreateSimulationHistoryUseCase;
-  let repository: jest.Mocked<ISimulationHistoryRepository>;
+  let repository: SimulationHistoryInMemoryRepository;
 
   beforeEach(() => {
-    repository = {
-      insert: jest.fn(),
-      findById: jest.fn(),
-      search: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      exists: jest.fn(),
-    };
+    repository = new SimulationHistoryInMemoryRepository();
     useCase = new CreateSimulationHistoryUseCase(repository);
   });
 
   it('should create a simulation history entry successfully', async () => {
-    const input = {
-      projectPath: '/test/project',
-      projectName: 'Test Project',
-      status: SimulationStatus.PENDING,
-      ttkVersion: '1.0.0',
-      configJson: '{"test": true}',
-      summaryJson: '{"summary": "test"}',
-      durationMs: 1000,
-      battleCount: 10,
-      trechoCount: 5,
-    };
+    const input = CreateSimulationHistoryInputFakeBuilder.anInput()
+      .withProjectPath('/test/project')
+      .withProjectName('Test Project')
+      .withStatus(SimulationStatus.PENDING)
+      .withTtkVersion('1.0.0')
+      .withConfigJson('{"test": true}')
+      .withSummaryJson('{"summary": "test"}')
+      .withDurationMs(1000)
+      .withBattleCount(10)
+      .withTrechoCount(5)
+      .build();
 
     const result = await useCase.execute(input);
 
-    expect(repository.insert).toHaveBeenCalledWith(expect.any(Object));
     expect(result).toBeDefined();
     expect(result.projectPath).toBe(input.projectPath);
     expect(result.projectName).toBe(input.projectName);
     expect(result.status).toBe(input.status);
+
+    // Verify entry was actually persisted
+    const persisted = await repository.findById(result.id);
+    expect(persisted).toBeDefined();
+    expect(persisted?.projectPath).toBe(input.projectPath);
   });
 
   it('should create entry with default PENDING status', async () => {
-    const input = {
-      projectPath: '/test/project',
-      projectName: 'Test Project',
-      ttkVersion: '1.0.0',
-      configJson: '{"test": true}',
-      summaryJson: '{"summary": "test"}',
-      durationMs: 1000,
-      battleCount: 10,
-      trechoCount: 5,
-    };
+    const input = CreateSimulationHistoryInputFakeBuilder.anInput()
+      .withProjectPath('/test/project')
+      .withProjectName('Test Project')
+      .withTtkVersion('1.0.0')
+      .withConfigJson('{"test": true}')
+      .withSummaryJson('{"summary": "test"}')
+      .withDurationMs(1000)
+      .withBattleCount(10)
+      .withTrechoCount(5)
+      .build();
 
     const result = await useCase.execute(input);
 
@@ -58,17 +66,17 @@ describe('CreateSimulationHistoryUseCase', () => {
   });
 
   it('should create entry with RUNNING status', async () => {
-    const input = {
-      projectPath: '/test/project',
-      projectName: 'Test Project',
-      status: SimulationStatus.RUNNING,
-      ttkVersion: '1.0.0',
-      configJson: '{"test": true}',
-      summaryJson: '{"summary": "test"}',
-      durationMs: 1000,
-      battleCount: 10,
-      trechoCount: 5,
-    };
+    const input = CreateSimulationHistoryInputFakeBuilder.anInput()
+      .withProjectPath('/test/project')
+      .withProjectName('Test Project')
+      .withStatus(SimulationStatus.RUNNING)
+      .withTtkVersion('1.0.0')
+      .withConfigJson('{"test": true}')
+      .withSummaryJson('{"summary": "test"}')
+      .withDurationMs(1000)
+      .withBattleCount(10)
+      .withTrechoCount(5)
+      .build();
 
     const result = await useCase.execute(input);
 

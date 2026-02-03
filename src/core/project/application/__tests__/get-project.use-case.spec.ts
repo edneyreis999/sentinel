@@ -137,20 +137,5 @@ describe('GetProjectUseCase', () => {
       expect(findByIdSpy).toHaveBeenCalledWith('test-id');
       expect(findByIdSpy).toHaveBeenCalledTimes(1);
     });
-
-    it('should return exactly what repository returns', async () => {
-      // Arrange
-      const expectedProject = CreateProjectOutputFakeBuilder.create()
-        .withName('Repository Test')
-        .build();
-
-      jest.spyOn(repository, 'findById').mockResolvedValue(expectedProject);
-
-      // Act
-      const result = await useCase.execute('any-id');
-
-      // Assert
-      expect(result).toEqual(expectedProject);
-    });
   });
 });

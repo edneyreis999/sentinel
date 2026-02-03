@@ -1,37 +1,30 @@
 import { DeleteSimulationHistoryUseCase } from '../use-cases/delete-simulation-history.use-case';
-import { ISimulationHistoryRepository } from '../../domain/ports';
 import { NotFoundError } from '@core/shared/domain/errors';
+import { SimulationHistoryInMemoryRepository } from '../../infra/db/in-memory/simulation-history-in-memory.repository';
+import { SimulationHistoryEntryFakeBuilder } from '../../domain/__tests__/simulation-history-entry.fake-builder';
 
 describe('DeleteSimulationHistoryUseCase', () => {
   let useCase: DeleteSimulationHistoryUseCase;
-  let repository: jest.Mocked<ISimulationHistoryRepository>;
+  let repository: SimulationHistoryInMemoryRepository;
 
   beforeEach(() => {
-    repository = {
-      insert: jest.fn(),
-      findById: jest.fn(),
-      search: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      exists: jest.fn(),
-    };
+    repository = new SimulationHistoryInMemoryRepository();
     useCase = new DeleteSimulationHistoryUseCase(repository);
   });
 
   it('should delete an entry successfully', async () => {
-    const entryId = 'test-id';
-    repository.exists.mockResolvedValue(true);
-    repository.delete.mockResolvedValue();
+    const entry = SimulationHistoryEntryFakeBuilder.anEntry().withId('test-id').build();
 
-    await expect(useCase.execute({ id: entryId })).resolves.not.toThrow();
+    repository.seed([entry]);
 
-    expect(repository.exists).toHaveBeenCalledWith(entryId);
-    expect(repository.delete).toHaveBeenCalledWith(entryId);
+    await expect(useCase.execute({ id: entry.id })).resolves.not.toThrow();
+
+    const exists = await repository.exists(entry.id);
+    expect(exists).toBe(false);
   });
 
   it('should throw NotFoundError when entry does not exist', async () => {
     const nonExistentId = 'non-existent-id';
-    repository.exists.mockResolvedValue(false);
 
     await expect(useCase.execute({ id: nonExistentId })).rejects.toThrow(NotFoundError);
   });

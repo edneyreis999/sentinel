@@ -207,43 +207,4 @@ describe('CreateProjectUseCase', () => {
       expect(result.name).toBe('ABC');
     });
   });
-
-  describe('integration with repository', () => {
-    it('should call repository.existsByPath before creating', async () => {
-      // Arrange
-      const existsByPathSpy = jest.spyOn(repository, 'existsByPath').mockResolvedValue(false);
-      const createSpy = jest
-        .spyOn(repository, 'create')
-        .mockResolvedValue(CreateProjectOutputFakeBuilder.create().build());
-
-      const input = CreateProjectInputFakeBuilder.create().build();
-
-      // Act
-      await useCase.execute(input);
-
-      // Assert
-      expect(existsByPathSpy).toHaveBeenCalledWith(input.path);
-      expect(createSpy).toHaveBeenCalledWith({
-        name: input.name,
-        path: input.path,
-        gameVersion: input.gameVersion,
-        screenshotPath: input.screenshotPath,
-      });
-      // Both spies should have been called
-      expect(existsByPathSpy).toHaveBeenCalledTimes(1);
-      expect(createSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('should NOT call repository.create when path exists', async () => {
-      // Arrange
-      jest.spyOn(repository, 'existsByPath').mockResolvedValue(true);
-      const createSpy = jest.spyOn(repository, 'create');
-
-      const input = CreateProjectInputFakeBuilder.create().build();
-
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow(DomainError);
-      expect(createSpy).not.toHaveBeenCalled();
-    });
-  });
 });

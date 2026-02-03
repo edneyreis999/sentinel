@@ -1,127 +1,123 @@
 import { ListSimulationHistoryUseCase } from '../use-cases/list-simulation-history.use-case';
-import { ISimulationHistoryRepository } from '../../domain/ports';
+import { SimulationHistoryInMemoryRepository } from '../../infra/db/in-memory/simulation-history-in-memory.repository';
 import { SimulationHistoryEntryFakeBuilder } from '../../domain/__tests__/simulation-history-entry.fake-builder';
 import { SimulationStatus } from '../../domain/value-objects';
 import { DomainError } from '@core/shared/domain/errors';
 
 describe('ListSimulationHistoryUseCase', () => {
   let useCase: ListSimulationHistoryUseCase;
-  let repository: jest.Mocked<ISimulationHistoryRepository>;
+  let repository: SimulationHistoryInMemoryRepository;
 
   beforeEach(() => {
-    repository = {
-      insert: jest.fn(),
-      findById: jest.fn(),
-      search: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      exists: jest.fn(),
-    };
+    repository = new SimulationHistoryInMemoryRepository();
     useCase = new ListSimulationHistoryUseCase(repository);
   });
 
   it('should list entries with default pagination', async () => {
-    const mockEntries = SimulationHistoryEntryFakeBuilder.theEntries(3).buildMany(3);
-    repository.search.mockResolvedValue({
-      items: mockEntries,
-      filters: {},
-      pagination: { total: 3, page: 1, perPage: 20, lastPage: 1 },
-    });
+    const entries = SimulationHistoryEntryFakeBuilder.theEntries(3).buildMany(3);
+    repository.seed(entries);
 
     const result = await useCase.execute();
 
-    expect(repository.search).toHaveBeenCalledWith({}, { page: 1, perPage: 20 });
     expect(result.items).toHaveLength(3);
     expect(result.pagination.total).toBe(3);
     expect(result.pagination.page).toBe(1);
     expect(result.pagination.perPage).toBe(20);
+    expect(result.pagination.lastPage).toBe(1);
   });
 
   it('should list entries with custom pagination', async () => {
-    const mockEntries = SimulationHistoryEntryFakeBuilder.theEntries(5).buildMany(5);
-    repository.search.mockResolvedValue({
-      items: mockEntries,
-      filters: {},
-      pagination: { total: 5, page: 2, perPage: 10, lastPage: 1 },
-    });
+    const entries = SimulationHistoryEntryFakeBuilder.theEntries(25).buildMany(25);
+    repository.seed(entries);
 
     const result = await useCase.execute({
       pagination: { page: 2, perPage: 10 },
     });
 
-    expect(repository.search).toHaveBeenCalledWith({}, { page: 2, perPage: 10 });
+    expect(result.items).toHaveLength(10);
     expect(result.pagination.page).toBe(2);
     expect(result.pagination.perPage).toBe(10);
+    expect(result.pagination.total).toBe(25);
+    expect(result.pagination.lastPage).toBe(3);
   });
 
   it('should filter by status', async () => {
-    const mockEntries = SimulationHistoryEntryFakeBuilder.theEntries(2)
+    const runningEntries = SimulationHistoryEntryFakeBuilder.theEntries(2)
       .withStatus(SimulationStatus.RUNNING)
       .buildMany(2);
+    const completedEntries = SimulationHistoryEntryFakeBuilder.theEntries(3)
+      .withStatus(SimulationStatus.COMPLETED)
+      .buildMany(3);
 
-    repository.search.mockResolvedValue({
-      items: mockEntries,
-      filters: { status: 'RUNNING' },
-      pagination: { total: 2, page: 1, perPage: 20, lastPage: 1 },
-    });
+    repository.seed([...runningEntries, ...completedEntries]);
 
     const result = await useCase.execute({
       filters: { status: 'RUNNING' },
     });
 
-    expect(repository.search).toHaveBeenCalledWith({ status: 'RUNNING' }, { page: 1, perPage: 20 });
     expect(result.items).toHaveLength(2);
+    expect(result.pagination.total).toBe(2);
+    expect(result.items.every((item) => item.status === 'RUNNING')).toBe(true);
   });
 
   it('should filter by project path', async () => {
-    const mockEntries = SimulationHistoryEntryFakeBuilder.theEntries(1).buildMany(1);
+    const targetEntries = SimulationHistoryEntryFakeBuilder.theEntries(2)
+      .withProjectPath('/test/project')
+      .buildMany(2);
+    const otherEntries = SimulationHistoryEntryFakeBuilder.theEntries(3)
+      .withProjectPath('/other/project')
+      .buildMany(3);
 
-    repository.search.mockResolvedValue({
-      items: mockEntries,
+    repository.seed([...targetEntries, ...otherEntries]);
+
+    const result = await useCase.execute({
       filters: { projectPath: '/test/project' },
-      pagination: { total: 1, page: 1, perPage: 20, lastPage: 1 },
     });
 
-    await useCase.execute({
-      filters: { projectPath: '/test/project' },
+    expect(result.items).toHaveLength(2);
+    expect(result.pagination.total).toBe(2);
+    expect(result.items.every((item) => item.projectPath.includes('/test/project'))).toBe(true);
+  });
+
+  describe('pagination validation', () => {
+    test.each([
+      {
+        page: 0,
+        perPage: 20,
+        description: 'page is less than 1',
+        expectedError: 'Page must be greater than 0',
+      },
+      {
+        page: 1,
+        perPage: 0,
+        description: 'perPage is less than 1',
+        expectedError: 'PerPage must be between 1 and 100',
+      },
+      {
+        page: 1,
+        perPage: 101,
+        description: 'perPage is greater than 100',
+        expectedError: 'PerPage must be between 1 and 100',
+      },
+    ])('should throw DomainError when $description', async ({ page, perPage, expectedError }) => {
+      await expect(useCase.execute({ pagination: { page, perPage } })).rejects.toThrow(
+        new DomainError(expectedError),
+      );
     });
-
-    expect(repository.search).toHaveBeenCalledWith(
-      { projectPath: '/test/project' },
-      { page: 1, perPage: 20 },
-    );
-  });
-
-  it('should throw error when page is less than 1', async () => {
-    await expect(useCase.execute({ pagination: { page: 0, perPage: 20 } })).rejects.toThrow(
-      DomainError,
-    );
-  });
-
-  it('should throw error when perPage is less than 1', async () => {
-    await expect(useCase.execute({ pagination: { page: 1, perPage: 0 } })).rejects.toThrow(
-      DomainError,
-    );
-  });
-
-  it('should throw error when perPage is greater than 100', async () => {
-    await expect(useCase.execute({ pagination: { page: 1, perPage: 101 } })).rejects.toThrow(
-      DomainError,
-    );
   });
 
   it('should calculate last page correctly', async () => {
-    const mockEntries = SimulationHistoryEntryFakeBuilder.theEntries(20).buildMany(20);
-    repository.search.mockResolvedValue({
-      items: mockEntries,
-      filters: {},
-      pagination: { total: 50, page: 2, perPage: 20, lastPage: 3 },
-    });
+    const entries = SimulationHistoryEntryFakeBuilder.theEntries(50).buildMany(50);
+    repository.seed(entries);
 
-    await useCase.execute({
+    const result = await useCase.execute({
       pagination: { page: 2, perPage: 20 },
     });
 
-    expect(repository.search).toHaveBeenCalled();
+    expect(result.pagination.total).toBe(50);
+    expect(result.pagination.page).toBe(2);
+    expect(result.pagination.perPage).toBe(20);
+    expect(result.pagination.lastPage).toBe(3);
+    expect(result.items).toHaveLength(20);
   });
 });

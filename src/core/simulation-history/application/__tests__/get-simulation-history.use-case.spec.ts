@@ -1,38 +1,31 @@
 import { GetSimulationHistoryUseCase } from '../use-cases/get-simulation-history.use-case';
-import { ISimulationHistoryRepository } from '../../domain/ports';
+import { SimulationHistoryInMemoryRepository } from '../../infra/db/in-memory/simulation-history-in-memory.repository';
 import { SimulationHistoryEntryFakeBuilder } from '../../domain/__tests__/simulation-history-entry.fake-builder';
 import { NotFoundError } from '@core/shared/domain/errors';
 
 describe('GetSimulationHistoryUseCase', () => {
   let useCase: GetSimulationHistoryUseCase;
-  let repository: jest.Mocked<ISimulationHistoryRepository>;
+  let repository: SimulationHistoryInMemoryRepository;
 
   beforeEach(() => {
-    repository = {
-      insert: jest.fn(),
-      findById: jest.fn(),
-      search: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      exists: jest.fn(),
-    };
+    repository = new SimulationHistoryInMemoryRepository();
     useCase = new GetSimulationHistoryUseCase(repository);
   });
 
   it('should get an entry by ID successfully', async () => {
-    const mockEntry = SimulationHistoryEntryFakeBuilder.anEntry().build();
-    repository.findById.mockResolvedValue(mockEntry);
+    const entry = SimulationHistoryEntryFakeBuilder.anEntry().build();
+    repository.seed([entry]);
 
-    const result = await useCase.execute({ id: mockEntry.id });
+    const result = await useCase.execute({ id: entry.id });
 
-    expect(repository.findById).toHaveBeenCalledWith(mockEntry.id);
     expect(result).toBeDefined();
-    expect(result.id).toBe(mockEntry.id);
+    expect(result.id).toBe(entry.id);
+    expect(result.projectPath).toBe(entry.projectPath);
+    expect(result.projectName).toBe(entry.projectName);
   });
 
   it('should throw NotFoundError when entry does not exist', async () => {
     const nonExistentId = 'non-existent-id';
-    repository.findById.mockResolvedValue(null);
 
     await expect(useCase.execute({ id: nonExistentId })).rejects.toThrow(NotFoundError);
   });
