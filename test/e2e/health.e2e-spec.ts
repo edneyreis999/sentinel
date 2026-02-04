@@ -1,7 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
+import {
+  setupE2ETestEnvironment,
+  teardownE2ETestEnvironment,
+  E2ETestContext,
+} from './helpers/e2e-test.helper';
 
 // Test constants
 const TEST_DELAYS = {
@@ -12,19 +15,15 @@ const ACCEPTABLE_UPTIME_DELTA_SECONDS = 1;
 
 describe('HealthController (e2e)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let testContext: E2ETestContext;
 
   beforeAll(async () => {
-    moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-  });
+    testContext = await setupE2ETestEnvironment();
+    app = testContext.app;
+  }, 60000); // 60s timeout for container startup
 
   afterAll(async () => {
-    await app.close();
+    await teardownE2ETestEnvironment(testContext);
   });
 
   describe('GET /health', () => {

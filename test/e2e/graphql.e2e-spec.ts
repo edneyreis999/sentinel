@@ -1,26 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
+import {
+  setupE2ETestEnvironment,
+  teardownE2ETestEnvironment,
+  E2ETestContext,
+} from './helpers/e2e-test.helper';
 
 describe('GraphQL (e2e)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let testContext: E2ETestContext;
   let graphqlUrl: string;
 
   beforeAll(async () => {
-    moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
+    testContext = await setupE2ETestEnvironment();
+    app = testContext.app;
     graphqlUrl = '/graphql';
-  });
+  }, 60000); // 60s timeout for container startup
 
   afterAll(async () => {
-    await app.close();
+    await teardownE2ETestEnvironment(testContext);
   });
 
   describe('Query: hello', () => {

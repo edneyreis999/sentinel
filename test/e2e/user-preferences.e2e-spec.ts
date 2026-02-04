@@ -1,41 +1,30 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
 import { PrismaService } from '@database/prisma.service';
+import {
+  setupE2ETestEnvironment,
+  teardownE2ETestEnvironment,
+  cleanDatabase,
+  E2ETestContext,
+} from './helpers/e2e-test.helper';
 
 describe('UserPreferences E2E', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let testContext: E2ETestContext;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    prisma = app.get<PrismaService>(PrismaService);
-  });
+    testContext = await setupE2ETestEnvironment();
+    app = testContext.app;
+    prisma = testContext.prisma;
+  }, 60000); // 60s timeout for container startup
 
   afterAll(async () => {
-    // Cleanup database
-    try {
-      await prisma.userPreferences.deleteMany({});
-    } catch {
-      // Ignore cleanup errors
-    }
-    await app.close();
+    await teardownE2ETestEnvironment(testContext);
   });
 
   beforeEach(async () => {
-    // Cleanup before each test
-    try {
-      await prisma.userPreferences.deleteMany({});
-    } catch {
-      // Ignore cleanup errors in before each
-    }
+    await cleanDatabase(prisma);
   });
 
   describe('Query: userPreferences', () => {
@@ -210,13 +199,6 @@ describe('UserPreferences E2E', () => {
 
   describe('Lazy Initialization', () => {
     it('should create default preferences on first access', async () => {
-      // Delete any existing preferences
-      try {
-        await prisma.userPreferences.deleteMany({});
-      } catch {
-        // Ignore
-      }
-
       const query = `
         query {
           userPreferences {

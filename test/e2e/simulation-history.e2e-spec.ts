@@ -1,39 +1,34 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/database/prisma.service';
 import { SimulationHistoryEntryFakeBuilder } from '../../src/core/simulation-history/domain/__tests__/simulation-history-entry.fake-builder';
 import { SimulationStatus } from '../../src/core/simulation-history/domain/value-objects';
+import {
+  setupE2ETestEnvironment,
+  teardownE2ETestEnvironment,
+  cleanDatabase,
+  E2ETestContext,
+} from './helpers/e2e-test.helper';
 
 describe('Simulation History Module (e2e)', () => {
   let app: INestApplication;
-  let moduleFixture: TestingModule;
   let prisma: PrismaService;
+  let testContext: E2ETestContext;
   let graphqlUrl: string;
 
   beforeAll(async () => {
-    moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
-    await app.init();
-
+    testContext = await setupE2ETestEnvironment();
+    app = testContext.app;
+    prisma = testContext.prisma;
     graphqlUrl = '/graphql';
-  });
+  }, 60000); // 60s timeout for container startup
 
   afterAll(async () => {
-    // Clean up test data
-    await prisma.simulationHistoryEntry.deleteMany();
-
-    await app.close();
+    await teardownE2ETestEnvironment(testContext);
   });
 
   beforeEach(async () => {
-    // Clean up before each test
-    await prisma.simulationHistoryEntry.deleteMany();
+    await cleanDatabase(prisma);
   });
 
   describe('Mutation: createSimulationHistoryEntry', () => {

@@ -1,40 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  INestApplication,
-  ValidationPipe,
-  BadRequestException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { z } from 'zod';
-import { AppModule } from '../../src/app.module';
 import { validateInput, validateResponse } from '../../src/core/shared/infra/validation';
 import { TEST_SCHEMAS } from './fixtures/test-schemas.fixture';
 import { toHaveValidationErrors, toHaveFieldError } from './matchers/validation-matchers';
+import {
+  setupE2ETestEnvironment,
+  teardownE2ETestEnvironment,
+  E2ETestContext,
+} from './helpers/e2e-test.helper';
 
 // Register custom matchers
 expect.extend({ toHaveValidationErrors, toHaveFieldError });
 
 describe('Validation Integration (e2e)', () => {
-  let app: INestApplication;
-  let moduleFixture: TestingModule;
+  let testContext: E2ETestContext;
 
   beforeAll(async () => {
-    moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-      }),
-    );
-    await app.init();
-  });
+    testContext = await setupE2ETestEnvironment();
+  }, 60000); // 60s timeout for container startup
 
   afterAll(async () => {
-    await app.close();
+    await teardownE2ETestEnvironment(testContext);
   });
 
   describe('validateInput function', () => {
