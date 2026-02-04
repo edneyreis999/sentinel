@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-# Install dependencies including dev dependencies for build
+# Install all dependencies (including dev dependencies for build)
 # Provide a dummy DATABASE_URL for prisma generate during build
 RUN DATABASE_URL="file:./dev.db" \
     pnpm install --frozen-lockfile
@@ -24,31 +24,41 @@ COPY . .
 # Build application
 RUN pnpm build
 
+# Keep all dependencies for production (Prisma CLI needed for migrations, full node_modules for runtime)
+# Prisma client is already generated during install postinstall script
+
 # Stage 2: Production
 FROM node:24-alpine AS production
 
 WORKDIR /app
 
-# Install pnpm and required dependencies for healthcheck
-RUN npm install -g pnpm@10 && \
-    apk add --no-cache wget
+# Install postgresql-client for pg_isready and wget for healthcheck
+RUN apk add --no-cache wget postgresql-client
 
 # Copy package files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Install production dependencies including Prisma
-RUN DATABASE_URL="file:./dev.db" \
-    pnpm install --prod --frozen-lockfile && \
-    pnpm add @prisma/client prisma @prisma/adapter-pg --ignore-scripts --save-optional
-
-# Copy Prisma schema
-COPY prisma ./prisma
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-
-# Copy generated Prisma client from builder
+# Copy production node_modules and built app from builder
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/generated ./dist/generated
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./
+
+# Create symlink for @prisma/client-runtime-utils (pnpm doesn't hoist it)
+# Find the actual versioned directory and create symlink dynamically
+RUN PRISMA_UTILS=$(ls -d node_modules/.pnpm/@prisma+client-runtime-utils@*) && \
+    ln -s "../${PRISMA_UTILS#node_modules/}/node_modules/@prisma/client-runtime-utils" node_modules/@prisma/client-runtime-utils
+
+# Copy entrypoint script
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create non-root user
+RUN addgroup -S appgroup && \
+    adduser -S -G appgroup app && \
+    chown -R app:appgroup /app
+USER app
 
 # Expose port
 EXPOSE 4000
@@ -57,5 +67,6 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:4000/health || exit 1
 
-# Start application
+# Start application via entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "dist/main.js"]

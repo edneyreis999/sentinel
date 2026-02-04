@@ -1,5 +1,5 @@
 import { RecentProject } from '../../../../domain/recent-project.aggregate';
-import { RecentProject as PrismaRecentProject } from '@prisma/client';
+import { RecentProject as PrismaRecentProject } from '@generated/prisma';
 
 export class RecentProjectMapper {
   /**

@@ -7,7 +7,7 @@ import {
 import { RecentProject } from '@core/recent-projects/domain';
 import { RecentProjectMapper } from './mappers/recent-project.mapper';
 import { PrismaService } from '@database';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@generated/prisma';
 
 /**
  * Prisma implementation of RecentProjects Repository

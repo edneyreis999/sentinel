@@ -24,7 +24,8 @@
       "@nest-modules/*": ["src/nest-modules/*"],
       "@database": ["src/database"],
       "@database/*": ["src/database/*"],
-      "@prisma/client": ["src/generated/prisma/client"]
+      "@generated/prisma": ["src/generated/prisma"],
+      "@generated/prisma/*": ["src/generated/prisma/*"]
     },
     "types": ["jest"]
   },

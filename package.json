@@ -11,6 +11,12 @@
   },
   "scripts": {
     "build": "nest build",
+    "docker:dev": "docker compose up",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose -f docker-compose.yml up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:clean": "docker compose down -v",
     "tsc": "tsc --noEmit",
     "tsc:watch": "tsc --noEmit --watch",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

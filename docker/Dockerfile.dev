@@ -1,0 +1,18 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm@10
+
+# Install postgresql-client for pg_isready in dev entrypoint
+RUN apk add --no-cache postgresql-client
+
+# Expose app and debug ports
+EXPOSE 4000 9229
+
+# Set environment for file watching (needed for Docker on macOS/Windows)
+ENV CHOKIDAR_USEPOLLING=true
+
+# Default command for development
+CMD ["pnpm", "start:dev"]

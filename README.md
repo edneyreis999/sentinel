@@ -452,59 +452,51 @@ subscription OnSimulationHistoryChanged {
 
 ## Docker Deployment
 
-### Using Docker Compose (Recommended)
+Sentinel supports full containerization with automatic migrations, health checks, and development hot-reload.
+
+### Quick Start
 
 ```bash
-# Start all services (database + backend)
-docker-compose up -d
+# 1. Create environment file
+cp .env.docker.example .env.docker
 
-# View logs
-docker-compose logs -f backend
+# 2. Production (detached mode)
+docker compose up -d
 
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes
-docker-compose down -v
+# Development (with hot-reload)
+pnpm docker:dev
 ```
 
-Services:
+The application will be available at http://localhost:4000/graphql
 
-- **PostgreSQL:** `localhost:5433`
-- **Backend API:** `http://localhost:3000/graphql`
+### Features
 
-### Manual Docker Build
+- **Automatic migrations** on container startup
+- **Health checks** for database and application
+- **Non-root user** for security
+- **Hot-reload** in development mode
+- **Named volumes** for node_modules (cross-platform compatibility)
+- **Debug port** 9229 exposed in development
+
+### Available Commands
 
 ```bash
-# Build the image
-docker build -t sentinel-backend .
-
-# Run with PostgreSQL
-docker run -d \
-  --name sentinel-backend \
-  -p 3000:3000 \
-  -e DATABASE_URL="postgresql://user:password@host:5432/sentinel?schema=public" \
-  sentinel-backend
+pnpm docker:dev      # Development with hot-reload
+pnpm docker:build    # Build production images
+pnpm docker:up       # Start production containers
+pnpm docker:down     # Stop all services
+pnpm docker:logs     # View logs
+pnpm docker:clean    # Stop and remove volumes
 ```
 
-### Docker Compose Services
+### Services
 
 | Service  | Port | Description            |
 | -------- | ---- | ---------------------- |
 | postgres | 5433 | PostgreSQL 16 database |
-| backend  | 3000 | NestJS GraphQL API     |
+| backend  | 4000 | NestJS GraphQL API     |
 
-### Environment Variables in Docker
-
-Set these in `docker-compose.yml`:
-
-```yaml
-environment:
-  NODE_ENV: production
-  PORT: 3000
-  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sentinel?schema=public
-  LOG_LEVEL: info
-```
+**Complete documentation:** [docs/docker/SETUP.md](docs/docker/SETUP.md)
 
 ## Project Structure
 
@@ -536,14 +528,21 @@ sentinel/
 │   └── ...                        # E2E test specs
 ├── docs/                          # Documentation
 │   ├── CLAUDE.md                  # Navigation guide
+│   ├── docker/                    # Docker documentation
+│   │   └── SETUP.md               # Docker setup guide
 │   ├── adrs/                      # Architecture Decision Records
 │   ├── decisoes-iniciais/         # Initial decisions
 │   └── pesquisas/                 # Technical research
+├── docker/                        # Docker configuration
+│   ├── entrypoint.sh              # Container startup script
+│   └── Dockerfile.dev             # Development image
 ├── planos/                        # Project planning
 ├── coverage/                      # Test coverage reports
 ├── .env.example                   # Environment template
-├── docker-compose.yml             # Docker services
-├── Dockerfile                     # Container image
+├── .env.docker                    # Docker environment variables
+├── docker-compose.yml             # Docker services (production)
+├── docker-compose.override.yml    # Docker services (development)
+├── Dockerfile                     # Container image (production)
 ├── nest-cli.json                  # NestJS CLI config
 ├── tsconfig.json                  # TypeScript config
 ├── package.json                   # Dependencies and scripts
