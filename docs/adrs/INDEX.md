@@ -1,7 +1,7 @@
 # ADR Index - Sentinel (Daratrine)
 
-**Total ADRs:** 34
-**Last Updated:** 2026-02-03
+**Total ADRs:** 36
+**Last Updated:** 2026-02-04
 
 ## Overview
 
@@ -56,11 +56,12 @@ This index organizes all Architecture Decision Records (ADRs) for the Sentinel p
 | [ADR-002](generated/GRAPH/ADR-002-template-based-cypher-generation.md)      | Template-Based Cypher Generation      | Accepted |
 | [ADR-002](generated/GRAPH/ADR-002-15-label-narrative-ontology-schema-v3.md) | 15-Label Narrative Ontology Schema v3 | Accepted |
 
-### INFRA Module (3 ADRs)
+### INFRA Module (4 ADRs)
 
 | ID                                                                                                | Title                                                       | Status   |
 | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------- |
 | [ADR-001](generated/INFRA/ADR-001-custom-postgresql-docker-image-compiled-extensions.md)          | Custom PostgreSQL Docker Image with Compiled Extensions     | Accepted |
+| [ADR-002](INFRA/ADR-002-production-docker-security-hardening.md)                                  | Production Docker Security Hardening                        | Accepted |
 | [ADR-XXX](generated/INFRA/ADR-XXX-vps-deployment-traditional-server.md)                           | VPS Deployment - Traditional Server                         | Accepted |
 | [ADR-XXX](generated/INFRA/ADR-XXX-docker-compose-orchestration-for-development-and-production.md) | Docker Compose Orchestration for Development and Production | Accepted |
 
@@ -100,13 +101,14 @@ This index organizes all Architecture Decision Records (ADRs) for the Sentinel p
 | ------------------------------------------------------------------------ | -------------------------------------------- | -------- |
 | [ADR-001](STATE/ADR-001-state-machine-pattern-for-status-transitions.md) | State Machine Pattern for Status Transitions | Accepted |
 
-### TEST Module (3 ADRs)
+### TEST Module (4 ADRs)
 
 | ID                                                                            | Title                                              | Status   |
 | ----------------------------------------------------------------------------- | -------------------------------------------------- | -------- |
 | [ADR-001](TEST/ADR-001-fakebuilder-with-proporfactory-pattern.md)             | FakeBuilder with PropOrFactory Pattern             | Accepted |
 | [ADR-002](TEST/ADR-002-infrastructure-wrapper-testing-strategy.md)            | Infrastructure Wrapper Testing Strategy            | Accepted |
 | [ADR-003](TEST/ADR-003-in-memory-repositories-for-application-layer-tests.md) | In-Memory Repositories for Application Layer Tests | Accepted |
+| [ADR-004](TEST/ADR-004-e2e-testing-with-testcontainers.md)                    | E2E Testing with Testcontainers                    | Accepted |
 
 ### VAL Module (1 ADR)
 
@@ -118,23 +120,23 @@ This index organizes all Architecture Decision Records (ADRs) for the Sentinel p
 
 ## Summary by Module
 
-| Module    | Total ADRs | Key Focus Areas                                             |
-| --------- | ---------- | ----------------------------------------------------------- |
-| API       | 2          | GraphQL API with Apollo Server 5                            |
-| ARCH      | 1          | Clean Architecture with DDD patterns                        |
-| DB        | 6          | PostgreSQL, Apache AGE, pgvector, FTS                       |
-| DI        | 1          | Symbol-based DI tokens                                      |
-| DOCS      | 3          | Documentation process and methodology                       |
-| GRAPH     | 3          | Graph database, Cypher, Ontology schema                     |
-| INFRA     | 3          | Docker, VPS deployment                                      |
-| LLM       | 4          | Claude models, embeddings, prompts                          |
-| ORM       | 1          | Prisma 7 with SQLite                                        |
-| RAG       | 1          | NestJS architecture                                         |
-| SEARCH    | 4          | Hybrid search, HNSW, RRF                                    |
-| STATE     | 1          | State Machine pattern                                       |
-| TEST      | 3          | FakeBuilder, In-Memory Repositories, Infrastructure testing |
-| VAL       | 1          | Zod 4 validation                                            |
-| **TOTAL** | **34**     | **All architectural decisions**                             |
+| Module    | Total ADRs | Key Focus Areas                                                 |
+| --------- | ---------- | --------------------------------------------------------------- |
+| API       | 2          | GraphQL API with Apollo Server 5                                |
+| ARCH      | 1          | Clean Architecture with DDD patterns                            |
+| DB        | 6          | PostgreSQL, Apache AGE, pgvector, FTS                           |
+| DI        | 1          | Symbol-based DI tokens                                          |
+| DOCS      | 3          | Documentation process and methodology                           |
+| GRAPH     | 3          | Graph database, Cypher, Ontology schema                         |
+| INFRA     | 4          | Docker, VPS deployment, security hardening                      |
+| LLM       | 4          | Claude models, embeddings, prompts                              |
+| ORM       | 1          | Prisma 7 with SQLite                                            |
+| RAG       | 1          | NestJS architecture                                             |
+| SEARCH    | 4          | Hybrid search, HNSW, RRF                                        |
+| STATE     | 1          | State Machine pattern                                           |
+| TEST      | 4          | FakeBuilder, In-Memory Repos, Infra testing, E2E Testcontainers |
+| VAL       | 1          | Zod 4 validation                                                |
+| **TOTAL** | **36**     | **All architectural decisions**                                 |
 
 ---
 
@@ -183,14 +185,16 @@ This index organizes all Architecture Decision Records (ADRs) for the Sentinel p
    - TEST-001 (FakeBuilder with PropOrFactory) reduces test boilerplate by 60-80%
    - TEST-002 (Infrastructure Wrapper Testing) focuses testing on business logic, not framework code
    - TEST-003 (In-Memory Repositories) enables behavior validation without mocking fragility
+   - TEST-004 (E2E Testing with Testcontainers) completes testing pyramid with real PostgreSQL containers
    - VAL-001 (Zod 4) provides runtime type safety
    - STATE-001 (State Machine) enables isolated unit testing of domain logic
-   - Rationale: Testable domain logic through pure TypeScript without framework dependencies, with practical testing strategies that eliminate over-mocking and focus on real behavior
+   - Rationale: Testable domain logic through pure TypeScript without framework dependencies, with practical testing strategies that eliminate over-mocking and focus on real behavior. Complete testing pyramid from domain to E2E
 
 9. **Infrastructure**:
-   - INFRA-001 (Custom PostgreSQL Docker Image) → INFRA-XXX (Docker Compose)
+   - INFRA-001 (Custom PostgreSQL Docker Image) → INFRA-XXX (Docker Compose) → INFRA-002 (Production Security Hardening)
    - DB-001 (Unified Database) → INFRA-001 (Compiled Extensions)
-   - Rationale: Docker with pre-compiled extensions ensures consistent environments
+   - INFRA-002 implements multi-stage builds, non-root user, entrypoint orchestration, and healthchecks
+   - Rationale: Docker with pre-compiled extensions ensures consistent environments. Production hardening provides defense-in-depth security
 
 ---
 
