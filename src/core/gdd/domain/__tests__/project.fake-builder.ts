@@ -19,7 +19,7 @@ export class ProjectFakeBuilder {
     return new ProjectFakeBuilder();
   }
 
-  static theProjects(count: number): ProjectFakeBuilder {
+  static theProjects(_count: number): ProjectFakeBuilder {
     return new ProjectFakeBuilder();
   }
 
