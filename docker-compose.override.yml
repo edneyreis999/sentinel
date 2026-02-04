@@ -1,6 +1,4 @@
 services:
-  # postgres inherits env_file from base docker-compose.yml
-
   backend:
     build:
       context: .
@@ -14,11 +12,16 @@ services:
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "4000:4000"
-      - "9229:9229"  # Debug port
+      - "9229:9229"
     volumes:
       - .:/app
-      - node_modules:/app/node_modules
-    command: ["pnpm", "start:dev"]
+      - /app/node_modules
+    command: >
+      sh -c "
+        yarn prisma generate &&
+        yarn prisma migrate deploy &&
+        yarn start:dev
+      "
 
 volumes:
   node_modules:

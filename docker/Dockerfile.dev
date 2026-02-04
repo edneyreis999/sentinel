@@ -2,11 +2,15 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10
-
 # Install postgresql-client for pg_isready in dev entrypoint
 RUN apk add --no-cache postgresql-client
+
+# Copy package files and prisma schema first for better layer caching
+COPY package.json yarn.lock ./
+COPY prisma ./prisma
+
+# Install dependencies (postinstall runs prisma generate)
+RUN yarn install --frozen-lockfile
 
 # Expose app and debug ports
 EXPOSE 4000 9229
@@ -15,4 +19,4 @@ EXPOSE 4000 9229
 ENV CHOKIDAR_USEPOLLING=true
 
 # Default command for development
-CMD ["pnpm", "start:dev"]
+CMD ["yarn", "start:dev"]

@@ -3,11 +3,8 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10
-
 # Copy package files (root level, single package project)
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json yarn.lock ./
 
 # Copy Prisma schema first (required for postinstall script)
 COPY prisma ./prisma
@@ -16,13 +13,13 @@ COPY prisma.config.ts ./
 # Install all dependencies (including dev dependencies for build)
 # Provide a dummy DATABASE_URL for prisma generate during build
 RUN DATABASE_URL="file:./dev.db" \
-    pnpm install --frozen-lockfile
+    yarn install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build application
-RUN pnpm build
+RUN yarn build
 
 # Keep all dependencies for production (Prisma CLI needed for migrations, full node_modules for runtime)
 # Prisma client is already generated during install postinstall script
@@ -36,7 +33,7 @@ WORKDIR /app
 RUN apk add --no-cache wget postgresql-client
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json yarn.lock ./
 
 # Copy production node_modules and built app from builder
 COPY --from=builder /app/node_modules ./node_modules
@@ -44,11 +41,6 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/generated ./dist/generated
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
-
-# Create symlink for @prisma/client-runtime-utils (pnpm doesn't hoist it)
-# Find the actual versioned directory and create symlink dynamically
-RUN PRISMA_UTILS=$(ls -d node_modules/.pnpm/@prisma+client-runtime-utils@*) && \
-    ln -s "../${PRISMA_UTILS#node_modules/}/node_modules/@prisma/client-runtime-utils" node_modules/@prisma/client-runtime-utils
 
 # Copy entrypoint script
 COPY docker/entrypoint.sh /entrypoint.sh
